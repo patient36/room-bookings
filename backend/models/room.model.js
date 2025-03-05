@@ -47,6 +47,10 @@ const roomSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
+        total_hours_booked: {
+            type: Number,
+            min: 0
+        },
         revenue: {
             type: Number,
             default: 0,
