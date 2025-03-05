@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema(
             enum: ["booker", "owner", "admin"],
             default: "booker",
         },
+        accountStatus: {
+            type: String,
+            enum: ["active", "banned", "dormant"],
+            default: "active",
+        },
         bookings: {
             type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Booking" }],
             default: [],
