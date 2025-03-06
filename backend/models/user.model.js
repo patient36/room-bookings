@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
     {
@@ -40,6 +41,7 @@ const userSchema = new mongoose.Schema(
         },
         phone: {
             type: String,
+            required: [true, "Phone is required"],
             trim: true,
             match: [/^\+[1-9]\d{1,14}$/, "Phone number must start with '+' followed by 2-15 digits"],
         },
@@ -48,6 +50,19 @@ const userSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
+
+userSchema.pre("save", async function (next) {
+    if (!this.isModified('password')) {
+        next()
+    }
+    const salt = await bcrypt.genSalt();
+    this.password = await bcrypt.hash(this.password, salt);
+    next()
+});
+
+userSchema.methods.matchPasswords = async function (enteredPassword) {
+    return await bcrypt.compare(enteredPassword, this.password)
+}
 
 const User = mongoose.model("User", userSchema);
 
