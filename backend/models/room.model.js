@@ -49,7 +49,8 @@ const roomSchema = new mongoose.Schema(
         },
         total_hours_booked: {
             type: Number,
-            min: 0
+            default: 0,
+            min: [0, "Booking duration cannot be negative"]
         },
         revenue: {
             type: Number,
@@ -58,8 +59,7 @@ const roomSchema = new mongoose.Schema(
         },
         images: [
             {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "Image",
+                type: String,
             },
         ],
     },
