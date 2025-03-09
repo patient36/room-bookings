@@ -2,7 +2,7 @@ import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
 const snsClient = new SNSClient({ region: process.env.AWS_REGION })
 
-export const sendOTPViaSMS = async (phone, message) => {
+const sendSMS = async (phone, message) => {
     const params = {
         Message: message,
         PhoneNumber: phone
@@ -18,3 +18,5 @@ export const sendOTPViaSMS = async (phone, message) => {
         throw error
     }
 }
+
+export default sendSMS

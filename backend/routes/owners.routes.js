@@ -3,7 +3,9 @@ import User from "../models/user.model.js"
 import Room from "../models/room.model.js"
 import upload from "../middlewares/upload.js"
 import protect from "../middlewares/protect.js"
-import { deleteFileFromS3ByUrl } from "../middlewares/deleteFile.js"
+import deleteFile from "../middlewares/deleteFile.js"
+import sendEmail from "../utils/ses.js"
+import sendSMS from "../utils/sns.js"
 
 const ownersRouter = express.Router()
 
@@ -59,7 +61,7 @@ ownersRouter.get('/my-rooms', async (req, res, next) => {
 })
 
 // Get one room 
-ownersRouter.get('/:id', async (req, res, next) => {
+ownersRouter.get('/room/:id', async (req, res, next) => {
     try {
         const roomId = req.params.id
         const userId = req.query.user

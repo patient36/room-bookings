@@ -2,7 +2,7 @@ import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
 const sesClient = new SESClient({ region: process.env.AWS_REGION });
 
-export const sendOTPViaEmail = async (email, otp) => {
+const sendEmail = async (email, message, subject) => {
     const params = {
         Destination: {
             ToAddresses: [email]
@@ -10,14 +10,14 @@ export const sendOTPViaEmail = async (email, otp) => {
         Message: {
             Body: {
                 Text: {
-                    Data: `Your OTP code is ${otp}.`
+                    Data: `${message}.`
                 },
                 Html: {
-                    Data: `<p>Your OTP code is <strong>${otp}</strong>.</p>`
+                    Data: `<p>${message}</p>`
                 }
             },
             Subject: {
-                Data: "Your OTP code"
+                Data: subject
             }
         },
         Source: process.env.AWS_SES_SENDER_EMAIL
@@ -33,3 +33,5 @@ export const sendOTPViaEmail = async (email, otp) => {
         throw error
     }
 };
+
+export default sendEmail

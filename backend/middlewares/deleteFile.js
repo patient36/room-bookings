@@ -13,7 +13,7 @@ const extractKeyFromUrl = (url) => {
     }
 };
 
-export const deleteFileFromS3ByUrl = async (url) => {
+const deleteFile = async (url) => {
     try {
         const key = extractKeyFromUrl(url);
 
@@ -30,3 +30,5 @@ export const deleteFileFromS3ByUrl = async (url) => {
         throw error;
     }
 };
+
+export default deleteFile

@@ -1,8 +1,8 @@
 import express from 'express'
 import User from '../models/user.model.js'
 import generateToken from '../utils/generateToken.js'
-import { sendOTPViaSMS } from '../utils/sns.js'
-import { sendOTPViaEmail } from '../utils/ses.js'
+import sendSMS from '../utils/sns.js'
+import sendEmail from '../utils/ses.js'
 
 const authRouter = express.Router()
 
@@ -75,10 +75,11 @@ authRouter.post('/send-otp', async (req, res, next) => {
 
         const OTP = Math.floor(100000 + Math.random() * 900000).toString();
         // store OTP for verification 
-
-        await sendOTPViaSMS(phone, `Your OTP is ${OTP}`)
-        await sendOTPViaEmail(email, OTP)
-        res.status(200).json({ message: "OTP sent", OTP })
+        const message = `Your verification code from LOYALTY HAVEN is ${OTP}`
+        const subject = "LOYALTY HAVEN verification code"
+        await sendSMS(phone, message)
+        await sendEmail(email, message, subject)
+        res.status(200).json({ message: "OTP sent" })
     } catch (error) {
         next(error)
     }
