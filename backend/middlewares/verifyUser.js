@@ -10,15 +10,6 @@ export const isOwner = async (req, res, next) => {
     next()
 }
 
-export const isBooker = async (req, res, next) => {
-    const userId = req.user._id
-    const user = await User.findOne({ _id: userId, accountType: 'booker' })
-    if (!user) {
-        return res.status(401).json({ message: "User is not a booker" })
-    }
-    req.user = user
-    next()
-}
 
 export const isAdmin = async (req, res, next) => {
     const userId = req.user._id
