@@ -1,49 +1,43 @@
 import express from "express"
-import User from "../models/user.model.js"
 import Room from "../models/room.model.js"
 import upload from "../middlewares/upload.js"
 import protect from "../middlewares/protect.js"
-import deleteFile from "../middlewares/deleteFile.js"
+import deleteFile from "../utils/deleteFile.js"
 import sendEmail from "../utils/ses.js"
 import sendSMS from "../utils/sns.js"
+import { isOwner } from "../middlewares/verifyUser.js"
+import Booking from "../models/booking.model.js"
 
 const ownersRouter = express.Router()
 
 // Get all of my rooms
-ownersRouter.get('/my-rooms', async (req, res, next) => {
+ownersRouter.get('/my-rooms', [protect, isOwner], async (req, res, next) => {
     try {
-        const userId = req.query.user
-        if (!userId) {
-            return res.status(400).json({ message: "userId is required" })
-        }
-        const user = await User.findOne({ _id: userId, accountType: 'owner' })
-        if (!user) {
-            return res.status(400).json({ message: "User is not registered as a room owner" })
-        }
-
+        const user = req.user;
         const page = parseInt(req.query.page, 10) || 1;
         const limit = parseInt(req.query.limit, 10) || 10;
         const skip = (page - 1) * limit;
-        const totalRooms = await Room.countDocuments({ owner: userId })
-        const totalPages = Math.ceil(totalRooms / limit)
+
+        const totalRooms = await Room.countDocuments({ owner: user._id });
+        const totalPages = Math.ceil(totalRooms / limit);
+
         if (page > totalPages) {
-            let rooms = []
             return res.status(200).json({
                 meta: {
                     user: user.name,
                     totalPages,
-                    pageSize: pending.length,
+                    pageSize: 0,
                     page,
-                    message: "page not found"
+                    message: "Page not found",
                 },
                 data: {
-                    rooms
+                    rooms: []
                 }
-            })
+            });
         }
 
+        const rooms = await Room.find({ owner: user._id }).skip(skip).limit(limit);
 
-        const rooms = await Room.find({ owner: userId }).skip(skip).limit(limit)
         res.status(200).json({
             meta: {
                 user: user.name,
@@ -54,61 +48,150 @@ ownersRouter.get('/my-rooms', async (req, res, next) => {
             data: {
                 rooms
             }
-        })
+        });
     } catch (error) {
-        next(error)
+        next(error);
     }
-})
+});
 
 // Get one room 
-ownersRouter.get('/room/:id', async (req, res, next) => {
+ownersRouter.get('/room/:id', [protect, isOwner], async (req, res, next) => {
     try {
-        const roomId = req.params.id
-        const userId = req.query.user
-        if (!userId) {
-            return res.status(400).json({ message: "userId is required" })
+        const user = req.user;
+        const roomId = req.params.id;
+
+        // Fetch the room and check if it exists
+        const room = await Room.findOne({ _id: roomId, owner: user._id });
+        if (!room) {
+            return res.status(404).json({ message: "Room not found" });
         }
-        const user = await User.findOne({ _id: userId, accountType: 'owner' })
-        if (!user) {
-            return res.status(400).json({ message: "User is not registered as a room owner" })
-        }
-        const room = await Room.findOne({ _id: roomId, owner: userId })
-        res.status(200).json({ room })
+
+        // Send the room data as the response
+        res.status(200).json({ room });
     } catch (error) {
-        next(error)
+        next(error); // Delegate error handling to middleware
     }
-})
+});
 
 // Create a room
-ownersRouter.post('/create', upload.fields([{ name: "room_image", minCount: 1 }]), async (req, res) => {
+ownersRouter.post('/create', [protect, isOwner, upload.fields([{ name: "room_image", minCount: 1 }])], async (req, res, next) => {
     try {
-        const userId = req.query.user
-        const { name, description, area, capacity, price_per_hour, street, location, amenities } = req.body
-        const room_images = []
-        const files = req.files.room_image
-        if (files) {
-            for (let i = 0; i < files.length; i++) {
-                room_images.push(files[i].location)
-            }
-        }
-        if (!userId) {
-            room_images.forEach(async (img) => {
-                await deleteFileFromS3ByUrl(img)
-            })
-            return res.status(400).json({ message: "userId is required" })
-        }
-        const user = await User.findOne({ _id: userId, accountType: 'owner' })
-        if (!user) {
-            room_images.forEach(async (img) => {
-                await deleteFileFromS3ByUrl(img)
-            })
-            return res.status(400).json({ message: "User is not registered as a room owner" })
-        }
-        const room = await Room.create({ name, description, area, capacity, price_per_hour, street, location, amenities: amenities.split(","), owner: userId, images: room_images })
+        const user = req.user;
+        const { name, description, area, capacity, price_per_hour, street, location, amenities } = req.body;
 
-        res.status(201).json({ message: 'Room created successfully', room_images });
+        // Validate required fields
+        if (!name || !description || !price_per_hour || !location) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
+
+        // Handle room images
+        const files = req.files?.room_image || [];
+        const room_images = files.map(file => file.location);
+
+        // Handle amenities
+        const amenitiesArray = amenities ? amenities.split(",").map(item => item.trim()) : [];
+
+        // Create the room
+        const room = await Room.create({
+            name, description, area, capacity, price_per_hour, street, location,
+            amenities: amenitiesArray,
+            owner: user._id,
+            images: room_images
+        });
+
+        await sendEmail(user.email, "Room created", `Room ${room.name} has been created successfully`);
+        await sendSMS(user.phone, `Room ${room.name} has been created successfully`);
+        res.status(201).json({ message: 'Room created successfully', room });
     } catch (error) {
-        throw error
+        next(error);
+    }
+});
+
+// update a room
+ownersRouter.put('/room/:id', [protect, isOwner, upload.fields([{ name: "room_image" }])], async (req, res, next) => {
+    try {
+        const user = req.user;
+        const roomId = req.params.id;
+        const updates = req.body;
+
+        let room = await Room.findOne({ _id: roomId, owner: user._id });
+        if (!room) {
+            return res.status(404).json({ message: "Room not found" });
+        }
+
+        const files = req.files?.room_image;
+        if (files && files.length > 0) {
+            const imageUrls = files.map(file => file.location);
+            updates.images = [...room.images, ...imageUrls];
+        }
+
+        room = await Room.findByIdAndUpdate(roomId, { $set: updates }, { new: true });
+
+        // Notify bookers about the changes
+        const bookings = await Booking.find({ roomId }).populate("bookerId");
+
+        bookings.forEach(async (booking) => {
+            const message = `Dear ${booking.bookerId.name}, we would like to inform you that there have been updates to the room you booked: ${room.name}. Please review the changes and let us know if any adjustments need to be made to your booking.`;
+            const subject = 'Room Update Notification';
+
+            await sendEmail(booking.bookerId.email, message, subject);
+            await sendSMS(booking.bookerId.phone, message);
+        });
+
+        res.status(200).json({ message: "Room updated successfully", room });
+
+    } catch (error) {
+        next(error);
+    }
+});
+
+// delete a room
+ownersRouter.delete('/room/:id', [protect, isOwner], async (req, res, next) => {
+    try {
+        const user = req.user;
+        const roomId = req.params.id;
+
+        const room = await Room.findOne({ _id: roomId, owner: user._id });
+        if (!room) {
+            return res.status(404).json({ message: "Room not found" });
+        }
+
+        const bookings = await Booking.find({ roomId }).populate("bookerId");
+
+        // Notify bookers
+        if (bookings.length > 0) {
+            const bookingNotifications = bookings.map(async (booking) => {
+                const message = `Dear ${booking.bookerId.name}, we are deeply sorry to inform you that your booking for ${room.name} from ${booking.checkIn} to ${booking.checkOut} was cancelled because the room is no longer available. Apologies for the inconvenience.`;
+                const subject = "Booking Cancelled";
+                return Promise.all([
+                    sendEmail(booking.bookerId.email, message, subject),
+                    sendSMS(booking.bookerId.phone, message)
+                ]);
+            });
+            await Promise.all(bookingNotifications);
+        }
+
+        // Notify room owner
+        const ownerMessage = `Dear ${user.name}, your room "${room.name}" was deleted successfully.`;
+        const ownerSubject = "Room Deleted";
+        await Promise.all([
+            sendEmail(user.email, ownerMessage, ownerSubject),
+            sendSMS(user.phone, ownerMessage)
+        ]);
+
+        // Delete room images (run in parallel)
+        const imageDeletions = room.images.map((image) => deleteFile(image));
+        await Promise.all(imageDeletions);
+
+        // Delete related bookings and room
+        await Promise.all([
+            Booking.deleteMany({ roomId: room._id }),
+            Room.deleteOne({ _id: room._id })
+        ]);
+
+        res.status(200).json({ message: "Room deleted successfully" });
+    } catch (error) {
+        next(error);
     }
 });
 
