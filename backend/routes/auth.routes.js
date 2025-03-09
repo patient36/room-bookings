@@ -4,9 +4,9 @@ import generateToken from '../utils/generateToken.js'
 import { sendOTPViaSMS } from '../utils/sns.js'
 import { sendOTPViaEmail } from '../utils/ses.js'
 
-const userRouter = express.Router()
+const authRouter = express.Router()
 
-userRouter.post('/register', async (req, res, next) => {
+authRouter.post('/register', async (req, res, next) => {
     try {
         const { email, password, name, phone } = req.body
         await User.deleteOne({ email })
@@ -25,7 +25,7 @@ userRouter.post('/register', async (req, res, next) => {
     }
 })
 
-userRouter.post("/login", async (req, res, next) => {
+authRouter.post("/login", async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
@@ -52,7 +52,7 @@ userRouter.post("/login", async (req, res, next) => {
 })
 
 
-userRouter.post('/logout', async (req, res, next) => {
+authRouter.post('/logout', async (req, res, next) => {
     const token = req.cookies.lh_token;
 
     if (!token) {
@@ -69,7 +69,7 @@ userRouter.post('/logout', async (req, res, next) => {
     res.status(200).json({ message: "Logged out successfully." });
 })
 
-userRouter.post('/send-otp', async (req, res, next) => {
+authRouter.post('/send-otp', async (req, res, next) => {
     try {
         const { phone, email } = req.body
 
@@ -84,7 +84,7 @@ userRouter.post('/send-otp', async (req, res, next) => {
     }
 })
 
-userRouter.patch("/reset-password", async (req, res, next) => {
+authRouter.patch("/reset-password", async (req, res, next) => {
     try {
         const { email, oldPassword, newPassword } = req.body;
 
@@ -109,4 +109,4 @@ userRouter.patch("/reset-password", async (req, res, next) => {
     }
 })
 
-export default userRouter
+export default authRouter
