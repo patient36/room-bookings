@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import { notFound, errorHandler } from "./middlewares/error.js";
 import authRouter from "./routes/auth.routes.js";
 import ownersRouter from "./routes/owners.routes.js";
+import bookersRouter from "./routes/bookers.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000
@@ -17,7 +18,8 @@ app.use(cors());
 app.use(cookieParser());
 
 app.use('/api/auth', authRouter);
-app.use('/api/rooms', ownersRouter);
+app.use('/api/owner/rooms', ownersRouter);
+app.use('/api/booker/rooms', bookersRouter);
 
 app.use(notFound);
 app.use(errorHandler);
