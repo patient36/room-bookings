@@ -99,7 +99,7 @@ ownersRouter.post('/create', [protect, isOwner, upload.fields([{ name: "room_ima
             images: room_images
         });
 
-        await sendEmail(user.email, "Room created", `Room ${room.name} has been created successfully`);
+        await sendEmail(user.email, `Room ${room.name} has been created successfully`, "Room created",);
         await sendSMS(user.phone, `Room ${room.name} has been created successfully`);
         res.status(201).json({ message: 'Room created successfully', room });
     } catch (error) {
@@ -137,6 +137,14 @@ ownersRouter.put('/room/:id', [protect, isOwner, upload.fields([{ name: "room_im
             await sendEmail(booking.bookerId.email, message, subject);
             await sendSMS(booking.bookerId.phone, message);
         });
+
+        // Notify room owner
+        const ownerMessage = `Dear ${user.name}, your room "${room.name}" was updated successfully.`;
+        const ownerSubject = "Room updated";
+        await Promise.all([
+            sendEmail(user.email, ownerMessage, ownerSubject),
+            sendSMS(user.phone, ownerMessage)
+        ]);
 
         res.status(200).json({ message: "Room updated successfully", room });
 
