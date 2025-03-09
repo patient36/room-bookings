@@ -1,6 +1,8 @@
 import express from 'express'
 import User from '../models/user.model.js'
 import generateToken from '../utils/generateToken.js'
+import { sendOTPViaSMS } from '../utils/sns.js'
+import { sendOTPViaEmail } from '../utils/ses.js'
 
 const userRouter = express.Router()
 
@@ -67,8 +69,16 @@ userRouter.post('/logout', async (req, res, next) => {
     res.status(200).json({ message: "Logged out successfully." });
 })
 
-userRouter.post("/send-otp", async (req, res, next) => {
+userRouter.post('/send-otp', async (req, res, next) => {
     try {
+        const { phone, email } = req.body
+
+        const OTP = Math.floor(100000 + Math.random() * 900000).toString();
+        // store OTP for verification 
+
+        await sendOTPViaSMS(phone, `Your OTP is ${OTP}`)
+        await sendOTPViaEmail(email, OTP)
+        res.status(200).json({ message: "OTP sent", OTP })
     } catch (error) {
         next(error)
     }
@@ -85,8 +95,6 @@ userRouter.patch("/reset-password", async (req, res, next) => {
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
-        // send and validate verification code sent to PHONE and EMAIL 
-
         const match = await user.matchPasswords(oldPassword);
         if (!match) {
             return res.status(400).json({ message: "Old password is incorrect." });
