@@ -159,12 +159,12 @@ bookersRouter.put('/edit-booking', protect, async (req, res, next) => {
             await room.save();
 
             // Notify the user (booker)
-            const text = `Booking for room ${room.name} has been updated. New check-in: ${updatedBooking.checkIn} and new check-out: ${updatedBooking.checkOut}`;
+            const text = `Booking for room ${room.name} has been updated. New check-in: ${new Date(updatedBooking.checkIn).toISOString()} and new check-out: ${new Date(updatedBooking.checkOut).toISOString()}`;
             const subject = "Booking Updated";
             await notifyUser(user, text, subject);
 
             // Notify the room owner
-            const ownerText = `Booking for your room ${room.name} has been updated. New check-in: ${updatedBooking.checkIn} and new check-out: ${updatedBooking.checkOut}`;
+            const ownerText = `Booking for your room ${room.name} has been updated. New check-in: ${new Date(updatedBooking.checkIn).toISOString()} and new check-out: ${new Date(updatedBooking.checkOut).toISOString()}`;
             await notifyUser(room.owner, ownerText, subject);
 
             return res.status(200).json({ message: "Booking updated successfully", booking: updatedBooking });

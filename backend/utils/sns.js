@@ -11,7 +11,7 @@ const sendSMS = async (phone, message) => {
     try {
         const command = new PublishCommand(params)
         const result = await snsClient.send(command)
-        console.log("SMS sent successfully", result.MessageId)
+        console.log("SMS sent successfully. SMS ID:", result.MessageId)
         return result
     } catch (error) {
         console.error("Error sending SMS", error.message)

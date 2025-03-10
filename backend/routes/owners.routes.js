@@ -172,7 +172,7 @@ ownersRouter.delete('/room/:id', [protect, isOwner], async (req, res, next) => {
         // Notify bookers
         if (bookings.length > 0) {
             const bookingNotifications = bookings.map(async (booking) => {
-                const message = `Dear ${booking.bookerId.name}, we are deeply sorry to inform you that your booking for ${room.name} from ${booking.checkIn} to ${booking.checkOut} was cancelled because the room is no longer available. Apologies for the inconvenience.`;
+                const message = `Dear ${booking.bookerId.name}, we are deeply sorry to inform you that your booking for ${room.name} from ${new Date(booking.checkIn).toISOString()} to ${new Date(booking.checkOut).toISOString()} was cancelled because the room is no longer available. Apologies for the inconvenience.`;
                 const subject = "Booking Cancelled";
                 return Promise.all([
                     sendEmail(booking.bookerId.email, message, subject),
