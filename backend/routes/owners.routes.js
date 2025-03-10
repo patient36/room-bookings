@@ -98,6 +98,9 @@ ownersRouter.post('/create', [protect, isOwner, upload.fields([{ name: "room_ima
             owner: user._id,
             images: room_images
         });
+        // save room on its owner
+        user.rooms.push(room._id)
+        await user.save()
 
         await sendEmail(user.email, `Room ${room.name} has been created successfully`, "Room created",);
         await sendSMS(user.phone, `Room ${room.name} has been created successfully`);
