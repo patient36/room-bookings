@@ -35,8 +35,7 @@ const roomSchema = new mongoose.Schema(
         },
         availability: {
             type: String,
-            enum: ["available", "unavailable"],
-            default: "available",
+            default: "7:00 AM - 6:00 PM",
         },
         amenities: {
             type: [String],
