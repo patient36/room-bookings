@@ -113,40 +113,39 @@ ownersRouter.post('/create', [protect, isOwner, upload.fields([{ name: "room_ima
 // update a room
 ownersRouter.put('/room/:id', [protect, isOwner, upload.fields([{ name: "room_image" }])], async (req, res, next) => {
     try {
-        const user = req.user;
-        const roomId = req.params.id;
-        const updates = req.body;
+        const { user, params: { id: roomId }, body, files } = req;
+        const allowedFields = new Set(["name", "description", "area", "capacity", "price_per_hour", "street", "location", "amenities"]);
 
-        let room = await Room.findOne({ _id: roomId, owner: user._id });
-        if (!room) {
-            return res.status(404).json({ message: "Room not found" });
+        // Filter valid fields
+        const updates = Object.entries(body).reduce((acc, [key, value]) => {
+            if (allowedFields.has(key)) acc[key] = value;
+            return acc;
+        }, {});
+
+        // Handle room images update
+        if (files?.room_image?.length) {
+            updates.images = { $each: files.room_image.map(file => file.location) };
         }
 
-        const files = req.files?.room_image;
-        if (files && files.length > 0) {
-            const imageUrls = files.map(file => file.location);
-            updates.images = [...room.images, ...imageUrls];
-        }
+        // Update room in a single query
+        const room = await Room.findOneAndUpdate(
+            { _id: roomId, owner: user._id },
+            { $set: updates, ...(updates.images && { $push: { images: updates.images } }) },
+            { new: true }
+        );
 
-        room = await Room.findByIdAndUpdate(roomId, { $set: updates }, { new: true });
+        if (!room) return res.status(404).json({ message: "Room not found" });
 
         // Notify bookers about the changes
         const bookings = await Booking.find({ roomId }).populate("bookerId");
 
-        bookings.forEach(async (booking) => {
-            const message = `Dear ${booking.bookerId.name}, we would like to inform you that there have been updates to the room you booked: ${room.name}. Please review the changes and let us know if any adjustments need to be made to your booking.`;
-            const subject = 'Room Update Notification';
-
-            await sendEmail(booking.bookerId.email, message, subject);
-            await sendSMS(booking.bookerId.phone, message);
-        });
-
-        // Notify room owner
-        const ownerMessage = `Dear ${user.name}, your room "${room.name}" was updated successfully.`;
-        const ownerSubject = "Room updated";
         await Promise.all([
-            sendEmail(user.email, ownerMessage, ownerSubject),
-            sendSMS(user.phone, ownerMessage)
+            ...bookings.map(({ bookerId }) => {
+                const message = `Dear ${bookerId.name}, the room you booked ("${room.name}") has been updated. Please review the changes.`;
+                return Promise.all([sendEmail(bookerId.email, message, 'Room Update Notification'), sendSMS(bookerId.phone, message)]);
+            }),
+            sendEmail(user.email, `Dear ${user.name}, your room "${room.name}" was updated successfully.`, "Room updated"),
+            sendSMS(user.phone, `Dear ${user.name}, your room "${room.name}" was updated successfully.`)
         ]);
 
         res.status(200).json({ message: "Room updated successfully", room });
