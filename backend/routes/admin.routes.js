@@ -192,6 +192,10 @@ adminRouter.put('/revoke-owner', [protect, isAdmin], async (req, res, next) => {
         await User.updateOne({ _id: userId }, { $set: { accountType: "booker" } })
 
         // notify user
+        const message = `Dear ${user.name}, we are sorry to inform you that you have been revoked access to your rooms temporarily due to not complying with our terms and conditions .`
+        const subject = "Rooms access revoked"
+        await notifyUser(user, message, subject)
+
         res.status(200).json({ message: "Room owner access revoked successfully" })
     } catch (error) {
         next(error)
@@ -207,6 +211,12 @@ adminRouter.put('/grant-owner', [protect, isAdmin], async (req, res, next) => {
             return res.status(404).json({ message: "User not found" })
         }
         await User.updateOne({ _id: userId }, { $set: { accountType: "owner" } })
+
+        // notify user
+        const message = `Dear ${user.name}, we are pleased to inform you that you have been granted access to your rooms.`
+        const subject = "Rooms access granted"
+        await notifyUser(user, message, subject)
+
         res.status(200).json({ message: "Room owner access granted successfully" })
     } catch (error) {
         next(error)
