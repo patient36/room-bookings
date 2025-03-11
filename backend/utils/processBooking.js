@@ -1,13 +1,12 @@
 const processBooking = (bookings, newBooking) => {
     const isOverlapping = (existingCheckIn, existingCheckOut, newCheckIn, newCheckOut) => {
         return (
-            (newCheckIn >= existingCheckIn && newCheckIn < existingCheckOut) || // New check-in is during an existing booking
-            (newCheckOut > existingCheckIn && newCheckOut <= existingCheckOut) || // New check-out is during an existing booking
-            (newCheckIn <= existingCheckIn && newCheckOut >= existingCheckOut) // New booking fully contains an existing booking
+            (newCheckIn >= existingCheckIn && newCheckIn < existingCheckOut) || // New check-in during existing booking
+            (newCheckOut > existingCheckIn && newCheckOut <= existingCheckOut) || // New check-out during existing booking
+            (newCheckIn <= existingCheckIn && newCheckOut >= existingCheckOut) // New booking fully contains existing booking
         );
     };
 
-    // Validate the new booking
     const newCheckIn = new Date(newBooking.checkIn);
     const newCheckOut = new Date(newBooking.checkOut);
 
@@ -22,18 +21,29 @@ const processBooking = (bookings, newBooking) => {
         }
     }
 
-    // Calculate available dates
     const availableDates = [];
-    let previousCheckOut = null;
-
+    const now = new Date();
+    
     // Sort bookings by check-in date
     const sortedBookings = [...bookings].sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn));
 
+    // Check if there's an available period before the first booking
+    if (sortedBookings.length > 0) {
+        const firstCheckIn = new Date(sortedBookings[0].checkIn);
+        if (now < firstCheckIn) {
+            availableDates.push({
+                checkIn: now.toISOString(),
+                checkOut: firstCheckIn.toISOString()
+            });
+        }
+    }
+
+    let previousCheckOut = null;
+    
     for (const booking of sortedBookings) {
         const currentCheckIn = new Date(booking.checkIn);
         const currentCheckOut = new Date(booking.checkOut);
 
-        // If there's a gap between the previous checkout and the current check-in
         if (previousCheckOut && currentCheckIn > previousCheckOut) {
             availableDates.push({
                 checkIn: previousCheckOut.toISOString(),
@@ -41,26 +51,22 @@ const processBooking = (bookings, newBooking) => {
             });
         }
 
-        // Update previousCheckOut to the latest checkout date
-        if (!previousCheckOut || currentCheckOut > previousCheckOut) {
-            previousCheckOut = currentCheckOut;
-        }
+        previousCheckOut = previousCheckOut && previousCheckOut > currentCheckOut ? previousCheckOut : currentCheckOut;
     }
 
-    // Add availability after the last booking (if any)
+    // Add availability after the last booking
     if (previousCheckOut) {
         availableDates.push({
             checkIn: previousCheckOut.toISOString(),
-            checkOut: "undefined" // The room is available indefinitely
+            checkOut: "undefined"
         });
     }
 
-    // Return the result object
     return {
         roomAvailable: !bookingOverlaps,
-        bookingOverlaps: bookingOverlaps,
-        availableDates: availableDates
+        bookingOverlaps,
+        availableDates
     };
-}
+};
 
-export default processBooking
+export default processBooking;
