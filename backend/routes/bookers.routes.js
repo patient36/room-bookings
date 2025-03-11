@@ -5,6 +5,7 @@ import protect from "../middlewares/protect.js"
 import sendSMS from "../utils/sns.js"
 import sendEmail from "../utils/ses.js"
 import processBooking from "../utils/processBooking.js"
+import { isActive } from "../middlewares/roomStatus.js"
 
 const bookersRouter = express.Router()
 
@@ -13,7 +14,7 @@ async function notifyUser(user, message, subject) {
     await sendEmail(user.email, message, subject);
 }
 
-bookersRouter.post("/book-room", protect, async (req, res, next) => {
+bookersRouter.post("/book-room", [protect, isActive], async (req, res, next) => {
     try {
         const user = req.user;
         const { checkIn, checkOut, roomId } = req.body;
@@ -64,7 +65,7 @@ bookersRouter.post("/book-room", protect, async (req, res, next) => {
 });
 
 // cancel booking
-bookersRouter.post("/cancel-booking", protect, async (req, res, next) => {
+bookersRouter.post("/cancel-booking", [protect, isActive], async (req, res, next) => {
     try {
         const user = req.user;
         const { roomId, bookingId } = req.body;
@@ -112,7 +113,7 @@ bookersRouter.post("/cancel-booking", protect, async (req, res, next) => {
 });
 
 // edit booking
-bookersRouter.put('/edit-booking', protect, async (req, res, next) => {
+bookersRouter.put('/edit-booking', [protect, isActive], async (req, res, next) => {
     try {
         const user = req.user;
         const { roomId, bookingId, checkIn, checkOut } = req.body;
