@@ -9,7 +9,7 @@ const authRouter = express.Router()
 authRouter.post('/register', async (req, res, next) => {
     try {
         const { email, password, name, phone } = req.body
-        await User.deleteOne({ email })
+         
         const user = await User.create({ email, password, name, phone })
         if (user) {
             generateToken(res, user._id)
