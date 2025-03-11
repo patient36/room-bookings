@@ -25,6 +25,10 @@ bookersRouter.post("/book-room", [protect, isActive], async (req, res, next) => 
             return res.status(404).json({ message: "Room not found" });
         }
 
+        if (room.owner.accountType !== "owner") {
+            return res.status(422).json({ message: "Room is inaccessible" });
+        }
+
         // Fetch active and pending bookings for this room
         const bookings = await Booking.find({ roomId, status: { $in: ["active", "pending"] } });
 
