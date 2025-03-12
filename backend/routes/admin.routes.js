@@ -19,7 +19,20 @@ async function notifyUser(user, message, subject) {
 // register as admin
 adminRouter.post('/register', async (req, res, next) => {
     try {
-        const { email, password, name, phone, admin_token } = req.body;
+        const { email, password, name, phone, admin_token, PhoneOTP, EmailOTP } = req.body;
+        if (!EmailOTP || !PhoneOTP) {
+            return res.status(400).json({ message: "Check your emails and SMS for verification codes." });
+        }
+
+        const validEmail = await verifyOTP(email, EmailOTP)
+        const validPhone = await verifyOTP(phone, PhoneOTP)
+        if (!validEmail.success) {
+            return res.status(400).json({ message: validEmail.message });
+        }
+
+        if (!validPhone.success) {
+            return res.status(400).json({ message: validPhone.message });
+        }
 
         if (!admin_token) {
             return res.status(403).json({ message: "Admin token is required" });
@@ -28,7 +41,7 @@ adminRouter.post('/register', async (req, res, next) => {
         let issuerId;
         try {
             const decoded = jwt.verify(admin_token, process.env.ADMIN_SIGNUP_TOKEN);
-            issuerId = decoded.id; 
+            issuerId = decoded.id;
         } catch (error) {
             return res.status(403).json({ message: "Invalid or expired admin token" });
         }

@@ -14,8 +14,21 @@ async function notifyUser(user, message, subject) {
 
 authRouter.post('/register', async (req, res, next) => {
     try {
-        const { email, password, name, phone } = req.body
+        const { email, password, name, phone, PhoneOTP, EmailOTP } = req.body
 
+        if (!EmailOTP || !PhoneOTP) {
+            return res.status(400).json({ message: "Check your emails and SMS for verification codes." });
+        }
+
+        const validEmail = await verifyOTP(email, EmailOTP)
+        const validPhone = await verifyOTP(phone, PhoneOTP)
+        if (!validEmail.success) {
+            return res.status(400).json({ message: validEmail.message });
+        }
+
+        if (!validPhone.success) {
+            return res.status(400).json({ message: validPhone.message });
+        }
         const user = await User.create({ email, password, name, phone })
         if (user) {
             generateToken(res, user._id)
@@ -26,6 +39,27 @@ authRouter.post('/register', async (req, res, next) => {
             email: user.email,
             message: "User created successfully",
         })
+    } catch (error) {
+        next(error)
+    }
+})
+
+authRouter.post('/validate-credentials', async (req, res, next) => {
+    try {
+        const { phone, email } = req.body
+
+        if (!phone?.trim() || !email?.trim()) {
+            return res.status(400).json({ message: "Phone number and email are required." });
+        }
+
+        const EmailOTP = await sendOTP(email)
+        const PhoneOTP = await sendOTP(phone)
+        const subject = "LOYALTY HAVEN - Verification Code"
+
+        // send OTPs separately
+        await sendEmail(email, `Verify your email for LOYALTY HAVEN. OTP: ${EmailOTP.otp}`, subject)
+        await sendSMS(phone, `Verify your phone number for LOYALTY HAVEN. OTP: ${PhoneOTP.otp}`)
+        res.status(200).json({ message: "OTPs sent" })
     } catch (error) {
         next(error)
     }
@@ -84,12 +118,13 @@ authRouter.post('/send-otp', async (req, res, next) => {
         }
 
         // Find the user
-        const user = await User.findOne({ email})
+        const user = await User.findOne({ email })
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
 
-        const OTP = await sendOTP(email)
+        let OTP = await sendOTP(email)
+        OTP = await OTP.sendOTP(phone)
 
         const message = `Hello, Your verification code for LOYALTY HAVEN is: ${OTP.otp}. Please use this code to complete your verification process. Thank you for choosing LOYALTY HAVEN!`
         const subject = "LOYALTY HAVEN - Verification Code"
