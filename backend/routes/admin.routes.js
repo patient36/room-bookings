@@ -7,6 +7,7 @@ import User from "../models/user.model.js"
 import sendEmail from "../utils/ses.js"
 import sendSMS from "../utils/sns.js"
 import generateToken from "../utils/generateToken.js"
+import jwt from "jsonwebtoken"
 
 const adminRouter = express.Router()
 
@@ -18,46 +19,74 @@ async function notifyUser(user, message, subject) {
 // register as admin
 adminRouter.post('/register', async (req, res, next) => {
     try {
-        const { email, password, name, phone, admin_token } = req.body
+        const { email, password, name, phone, admin_token } = req.body;
 
-        if (!admin_token || admin_token !== process.env.ADMIN_SIGNUP_TOKEN) {
-            return res.status(403).json({ message: "Consult admins for admin token" })
+        if (!admin_token) {
+            return res.status(403).json({ message: "Admin token is required" });
         }
 
-        const user = await User.create({ email, password, name, phone, accountType: "admin" })
-        if (user) {
-            generateToken(res, user._id)
+        let issuerId;
+        try {
+            const decoded = jwt.verify(admin_token, process.env.ADMIN_SIGNUP_TOKEN);
+            issuerId = decoded.id; 
+        } catch (error) {
+            return res.status(403).json({ message: "Invalid or expired admin token" });
         }
 
-        // notify other admins
-        const admins = await User.find({ accountType: "admin", _id: { $ne: user._id } })
-        if (admins.length > 0){
-            const message = `A new system admin has been registered `
-            const subject = "New system admin registered"
+        const issuer = await User.findById(issuerId);
+        if (!issuer || issuer.accountType !== "admin") {
+            return res.status(403).json({ message: "Only admins can issue admin tokens" });
+        }
+
+        const user = await User.create({ email, password, name, phone, accountType: "admin" });
+
+        // Generate a token for the new admin
+        generateToken(res, user._id);
+
+        // Notify other admins
+        const admins = await User.find({
+            accountType: "admin",
+            _id: { $nin: [issuerId, user._id] },
+        });
+
+        if (admins.length > 0) {
+            const message = `A new system admin has been registered by ${issuer.name} (${issuer.email}).`;
+            const subject = "New System Admin Registered";
             for (const admin of admins) {
-                await notifyUser(admin, message, subject)
+                await notifyUser(admin, message, subject);
             }
         }
+
+        // Notify the issuer
+        const issuerMessage = `You have successfully registered a new system admin: ${user.name} (${user.email}).`;
+        await notifyUser(issuer, issuerMessage, "New Admin Registered");
 
         res.status(201).json({
             id: user._id,
             name: user.name,
             email: user.email,
             message: "System admin created successfully",
-        })
+        });
     } catch (error) {
-        next(error)
+        next(error);
     }
-})
+});
 
 // get current admin token
 adminRouter.get('/get-token', [protect, isAdmin], (req, res, next) => {
     try {
-        res.status(200).json({ token: process.env.ADMIN_SIGNUP_TOKEN })
+        const userId = req.user._id;
+
+        const token = jwt.sign(
+            { id: userId },
+            process.env.ADMIN_SIGNUP_TOKEN,
+            { expiresIn: '1h' }
+        );
+        res.status(200).json({ token });
     } catch (error) {
-        next(error)
+        next(error);
     }
-})
+});
 
 // get all rooms
 adminRouter.get('/all-rooms', [protect, isAdmin], async (req, res, next) => {
