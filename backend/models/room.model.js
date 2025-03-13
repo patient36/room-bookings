@@ -51,11 +51,6 @@ const roomSchema = new mongoose.Schema(
             default: 0,
             min: [0, "Booking duration cannot be negative"]
         },
-        revenue: {
-            type: Number,
-            default: 0,
-            min: [0, "Revenue cannot be negative"],
-        },
         images: [
             {
                 type: String,

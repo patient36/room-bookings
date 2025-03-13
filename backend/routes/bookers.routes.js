@@ -181,4 +181,23 @@ bookersRouter.put('/edit-booking', [protect, isActive], async (req, res, next) =
     }
 });
 
+// get available rooms
+bookersRouter.post('/available-rooms', async (req, res, next) => {
+    try {
+        const rooms = await Room.find()
+        const { checkIn, checkOut } = req.body
+        let interval = { checkIn, checkOut }
+        let availableRooms = []
+        for (let room of rooms) {
+            let bookings = await Booking.find({ roomId: room._id })
+            const result = processBooking(bookings, interval)
+            if (result.roomAvailable) {
+                availableRooms.push({ name: room.name, id: room._id, location: room.location, street: room.street, price_per_hour: room.price_per_hour })
+            }
+        }
+        res.status(200).json({ availableRooms })
+    } catch (error) {
+
+    }
+})
 export default bookersRouter
