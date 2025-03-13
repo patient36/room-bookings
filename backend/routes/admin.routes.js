@@ -40,7 +40,7 @@ adminRouter.post('/register', async (req, res, next) => {
 
         let issuerId;
         try {
-            const decoded = jwt.verify(admin_token, process.env.ADMIN_SIGNUP_TOKEN);
+            const decoded = jwt.verify(admin_token, process.env.JWT_SECRET);
             issuerId = decoded.id;
         } catch (error) {
             return res.status(403).json({ message: "Invalid or expired admin token" });
@@ -92,7 +92,7 @@ adminRouter.get('/get-token', [protect, isAdmin], (req, res, next) => {
 
         const token = jwt.sign(
             { id: userId },
-            process.env.ADMIN_SIGNUP_TOKEN,
+            process.env.JWT_SECRET,
             { expiresIn: '1h' }
         );
         res.status(200).json({ token });
