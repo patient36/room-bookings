@@ -11,6 +11,16 @@ const PaymentSchema = new mongoose.Schema({
         ref: "User",
         required: true,
     },
+    type: {
+        type: String,
+        enum: ["deposit", "refund", "disbursement"],
+        required: true,
+    },
+    method: {
+        type: String,
+        enum: ["card", "momo"],
+        default: "card"
+    },
     amount: {
         type: Number,
         default: 0,
@@ -21,9 +31,18 @@ const PaymentSchema = new mongoose.Schema({
         enum: ["usd", "eur", "rwf"],
         default: "rwf",
     },
-    paymentIntentId: {
+    paymentId: {
         type: String,
     },
+    description: {
+        type: String,
+        default: ""
+    },
+    status: {
+        type: String,
+        enum: ["pending", "completed", "failed"],
+        default: "pending"
+    }
 }, { timestamps: true })
 
 
