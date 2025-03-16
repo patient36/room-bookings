@@ -5,7 +5,7 @@ import protect from "../middlewares/protect.js"
 import sendSMS from "../utils/sns.js"
 import sendEmail from "../utils/ses.js"
 import processBooking from "../utils/processBooking.js"
-import { isActive } from "../middlewares/roomStatus.js"
+import { isActive, isAvailable } from "../middlewares/roomStatus.js"
 
 const bookersRouter = express.Router()
 
@@ -14,35 +14,14 @@ async function notifyUser(user, message, subject) {
     await sendEmail(user.email, message, subject);
 }
 
-bookersRouter.post("/book-room", [protect, isActive], async (req, res, next) => {
+bookersRouter.post("/book-room", [protect, isActive, isAvailable], async (req, res, next) => {
     try {
         const user = req.user;
-        const { checkIn, checkOut, roomId } = req.body;
-
-        // Check if the room exists with its owner details
-        const room = await Room.findOne({ _id: roomId }).populate("owner");
-        if (!room) {
-            return res.status(404).json({ message: "Room not found" });
-        }
-
-        if (room.owner.accountType !== "owner") {
-            return res.status(422).json({ message: "Room is inaccessible" });
-        }
-
-        // Fetch active and pending bookings for this room
-        const bookings = await Booking.find({ roomId, status: { $in: ["active", "pending"] } });
-
-        if (bookings.length) {
-            const incomingBooking = { checkIn, checkOut };
-            const result = processBooking(bookings, incomingBooking);
-
-            if (!result.roomAvailable) {
-                return res.status(409).json({ message: "Room unavailable", availableDates: result.availableDates });
-            }
-        }
+        const { checkIn, checkOut } = req.body;
+        const room = req.room;
 
         // Create the new booking
-        const booking = await Booking.create({ checkIn, checkOut, bookerId: user._id, roomId });
+        const booking = await Booking.create({ checkIn, checkOut, bookerId: user._id, roomId: room._id });
         booking.fees = room.price_per_hour * booking.duration;
         await booking.save();
 
@@ -97,7 +76,6 @@ bookersRouter.post("/cancel-booking", [protect, isActive], async (req, res, next
 
         // Update room's total hours and revenue
         room.total_hours_booked -= booking.duration;
-        room.revenue -= booking.fees;
         await room.save();
 
         // Notification text
@@ -145,22 +123,19 @@ bookersRouter.put('/edit-booking', [protect, isActive], async (req, res, next) =
         const result = processBooking(bookings, incomingUpdate);
 
         if (result.roomAvailable) {
-            // Recalculate room's total hours and revenue
+            // Recalculate room's total hours
             room.total_hours_booked -= booking.duration;
-            room.revenue -= booking.fees;
             await room.save();
 
             // Calculate the new duration and fees
             const updatedCheckIn = new Date(incomingUpdate.checkIn);
             const updatedCheckOut = new Date(incomingUpdate.checkOut);
-            const duration = Math.round(((updatedCheckOut - updatedCheckIn) / 3600000) * 1000) / 1000; // duration in hours
-            const fees = room.price_per_hour * duration;
+            const duration = Math.round(((updatedCheckOut - updatedCheckIn) / 3600000) * 1000) / 1000;
 
-            const updatedBooking = await Booking.findByIdAndUpdate(bookingId, { ...incomingUpdate, duration, fees }, { new: true });
+            const updatedBooking = await Booking.findByIdAndUpdate(bookingId, { ...incomingUpdate, duration }, { new: true });
 
-            // Update room's total hours and revenue
+            // Update room's total hours
             room.total_hours_booked += updatedBooking.duration;
-            room.revenue += updatedBooking.fees;
             await room.save();
 
             // Notify the user (booker)

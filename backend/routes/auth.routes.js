@@ -7,11 +7,6 @@ import { sendOTP, verifyOTP } from '../utils/OTP.js'
 
 const authRouter = express.Router()
 
-async function notifyUser(user, message, subject) {
-    await sendSMS(user.phone, message);
-    await sendEmail(user.email, message, subject);
-}
-
 authRouter.post('/register', async (req, res, next) => {
     try {
         const { email, password, name, phone, PhoneOTP, EmailOTP } = req.body
@@ -91,7 +86,6 @@ authRouter.post("/login", async (req, res, next) => {
     }
 })
 
-
 authRouter.post('/logout', async (req, res, next) => {
     const token = req.cookies.lh_token;
 
@@ -107,33 +101,6 @@ authRouter.post('/logout', async (req, res, next) => {
     });
 
     res.status(200).json({ message: "Logged out successfully." });
-})
-
-authRouter.post('/send-otp', async (req, res, next) => {
-    try {
-        const { phone, email } = req.body
-
-        if (!phone?.trim() || !email?.trim()) {
-            return res.status(400).json({ message: "Phone number and email are required." });
-        }
-
-        // Find the user
-        const user = await User.findOne({ email })
-        if (!user) {
-            return res.status(404).json({ message: "User not found." });
-        }
-
-        let OTP = await sendOTP(email)
-        OTP = await OTP.sendOTP(phone)
-
-        const message = `Hello, Your verification code for LOYALTY HAVEN is: ${OTP.otp}. Please use this code to complete your verification process. Thank you for choosing LOYALTY HAVEN!`
-        const subject = "LOYALTY HAVEN - Verification Code"
-
-        await notifyUser(user, message, subject)
-        res.status(200).json({ message: "OTP sent" })
-    } catch (error) {
-        next(error)
-    }
 })
 
 authRouter.patch("/reset-password", async (req, res, next) => {
