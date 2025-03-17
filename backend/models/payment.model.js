@@ -11,6 +11,11 @@ const PaymentSchema = new mongoose.Schema({
         ref: "User",
         required: true,
     },
+    roomId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Room",
+        required: true,
+    },
     type: {
         type: String,
         enum: ["deposit", "refund", "disbursement"],
@@ -28,8 +33,8 @@ const PaymentSchema = new mongoose.Schema({
     },
     currency: {
         type: String,
-        enum: ["usd", "eur", "rwf"],
-        default: "rwf",
+        enum: ["USD", "EUR", "RWF"],
+        default: "RWF",
     },
     paymentId: {
         type: String,
@@ -49,6 +54,13 @@ const PaymentSchema = new mongoose.Schema({
     }
 }, { timestamps: true })
 
+
+PaymentSchema.pre('validate', function (next) {
+    if (this.currency) {
+        this.currency = this.currency.toUpperCase();
+    }
+    next();
+});
 
 const Payment = mongoose.model("Payment", PaymentSchema)
 

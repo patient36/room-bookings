@@ -6,6 +6,8 @@ import sendSMS from "../utils/sns.js"
 import sendEmail from "../utils/ses.js"
 import processBooking from "../utils/processBooking.js"
 import { isActive, isAvailable } from "../middlewares/roomStatus.js"
+import { hasPaid } from "../middlewares/hasPaid.js"
+import Payment from "../models/payment.model.js"
 
 const bookersRouter = express.Router()
 
@@ -14,7 +16,7 @@ async function notifyUser(user, message, subject) {
     await sendEmail(user.email, message, subject);
 }
 
-bookersRouter.post("/book-room", [protect, isActive, isAvailable], async (req, res, next) => {
+bookersRouter.post("/book-room", [protect, isActive, isAvailable, hasPaid], async (req, res, next) => {
     try {
         const user = req.user;
         const { checkIn, checkOut } = req.body;
@@ -33,6 +35,9 @@ bookersRouter.post("/book-room", [protect, isActive, isAvailable], async (req, r
         // Update user bookings
         user.bookings.push(booking._id);
         await user.save();
+
+        // mark payment as used
+        await Payment.findOneAndUpdate({ _id: req.payment._id }, { $set: { used: true } });
 
         // Send notifications
         const message = `Booking for room ${room.name} from ${new Date(booking.checkIn).toISOString()} to ${new Date(booking.checkOut).toISOString()} by ${user.name} was successful.`;
