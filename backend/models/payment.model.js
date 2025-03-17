@@ -14,7 +14,7 @@ const PaymentSchema = new mongoose.Schema({
     type: {
         type: String,
         enum: ["deposit", "refund", "disbursement"],
-        required: true,
+        default: "deposit"
     },
     method: {
         type: String,
@@ -42,6 +42,10 @@ const PaymentSchema = new mongoose.Schema({
         type: String,
         enum: ["pending", "completed", "failed"],
         default: "pending"
+    },
+    used: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true })
 
