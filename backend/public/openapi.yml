@@ -1,0 +1,126 @@
+openapi: 3.0.0
+info:
+  title: Payment API
+  version: 1.0.0
+  description: API for handling payments via Momo and Card.
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+paths:
+  /payment/momo:
+    post:
+      summary: Process a Momo payment
+      description: Endpoint to process mobile money payments.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  description: The payment amount.
+                phone:
+                  type: string
+                  description: The payer's phone number.
+                roomId:
+                  type: string
+                  description: The ID of the room being booked.
+              required:
+                - amount
+                - phone
+                - roomId
+      responses:
+        '200':
+          description: Payment processed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment:
+                    $ref: '#/components/schemas/Payment'
+        '400':
+          description: Bad request (e.g., missing required fields).
+        '404':
+          description: Room not found.
+  /payment/card:
+    post:
+      summary: Process a Card payment
+      description: Endpoint to process card payments.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  description: The payment amount.
+                currency:
+                  type: string
+                  description: The payment currency (e.g., USD, EUR, RWF).
+                roomId:
+                  type: string
+                  description: The ID of the room being booked.
+              required:
+                - amount
+                - currency
+                - roomId
+      responses:
+        '200':
+          description: Payment processed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clientSecret:
+                    type: string
+                    description: Client secret for the PaymentIntent.
+                  payment:
+                    $ref: '#/components/schemas/Payment'
+        '400':
+          description: Bad request (e.g., missing required fields).
+        '404':
+          description: Room not found.
+components:
+  schemas:
+    Payment:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: The payment ID.
+        payer:
+          type: string
+          description: The ID of the payer.
+        receiver:
+          type: string
+          description: The ID of the receiver.
+        amount:
+          type: number
+          description: The payment amount.
+        currency:
+          type: string
+          description: The payment currency.
+        method:
+          type: string
+          description: The payment method (e.g., momo, card).
+        paymentId:
+          type: string
+          description: The external payment ID (e.g., from Stripe or PawaPay).
+        description:
+          type: string
+          description: A description of the payment.
+      required:
+        - _id
+        - payer
+        - receiver
+        - amount
+        - currency
+        - method
+        - paymentId
+        - description

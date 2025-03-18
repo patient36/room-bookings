@@ -18,7 +18,7 @@ const PaymentSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ["deposit", "refund", "disbursement"],
+        enum: ["deposit", "refund", "withdrawal"],
         default: "deposit"
     },
     method: {
@@ -49,6 +49,10 @@ const PaymentSchema = new mongoose.Schema({
         default: "pending"
     },
     used: {
+        type: Boolean,
+        default: false
+    },
+    withdrawn: {
         type: Boolean,
         default: false
     }

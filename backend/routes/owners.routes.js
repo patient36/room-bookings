@@ -7,6 +7,7 @@ import sendEmail from "../utils/ses.js"
 import sendSMS from "../utils/sns.js"
 import { isOwner } from "../middlewares/verifyUser.js"
 import Booking from "../models/booking.model.js"
+import Payment from "../models/payment.model.js"
 
 const ownersRouter = express.Router()
 
@@ -66,8 +67,10 @@ ownersRouter.get('/room/:id', [protect, isOwner], async (req, res, next) => {
             return res.status(404).json({ message: "Room not found" });
         }
 
+        // Find related bookings
+        const bookings = await Booking.find({ roomId: room._id })
         // Send the room data as the response
-        res.status(200).json({ room });
+        res.status(200).json({ room, bookings });
     } catch (error) {
         next(error); // Delegate error handling to middleware
     }
@@ -200,6 +203,18 @@ ownersRouter.delete('/room/:id', [protect, isOwner], async (req, res, next) => {
         ]);
 
         res.status(200).json({ message: "Room deleted successfully" });
+    } catch (error) {
+        next(error);
+    }
+});
+
+
+//Payments for my rooms
+ownersRouter.get('/payments', [protect, isOwner], async (req, res, next) => {
+    try {
+        const user = req.user;
+        const payments = await Payment.find({ receiver: user._id });
+        res.status(200).json({ payments });
     } catch (error) {
         next(error);
     }

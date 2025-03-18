@@ -9,6 +9,8 @@ import ownersRouter from "./routes/owners.routes.js";
 import bookersRouter from "./routes/bookers.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 import paymentRouter from "./routes/payment.routes.js";
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 const app = express();
 const PORT = process.env.PORT || 5000
@@ -24,6 +26,14 @@ app.use((req, res, next) => {
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(cookieParser());
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename);
+app.use(express.static(__dirname));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/redoc.html'));
+});
 
 app.use('/api/auth', authRouter);
 app.use('/api/owner/rooms', ownersRouter);
