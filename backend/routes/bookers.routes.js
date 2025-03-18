@@ -16,6 +16,7 @@ async function notifyUser(user, message, subject) {
     await sendEmail(user.email, message, subject);
 }
 
+// book room
 bookersRouter.post("/book-room", [protect, isActive, isAvailable, hasPaid], async (req, res, next) => {
     try {
         const user = req.user;
@@ -160,6 +161,74 @@ bookersRouter.put('/edit-booking', [protect, isActive], async (req, res, next) =
         next(error);
     }
 });
+
+// my bookings
+bookersRouter.get('/my-bookings', [protect, isActive], async (req, res, next) => {
+    try {
+        const user = req.user;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const [bookings, total] = await Promise.all([
+            Booking.find({ bookerId: user._id })
+                .populate("roomId")
+                .skip(skip)
+                .limit(limit),
+            Booking.countDocuments({ bookerId: user._id })
+        ]);
+
+        res.status(200).json({
+            bookings,
+            currentPage: page,
+            totalPages: Math.ceil(total / limit),
+            totalBookings: total
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// get all active rooms
+bookersRouter.get('/', async (req, res, next) => {
+    try {
+        const sort = req.query.sort || "createdAt"
+        const page = parseInt(req.query.page, 10) || 1
+        const limit = parseInt(req.query.limit, 10) || 10
+        const skip = (page - 1) * limit
+
+        const totalRooms = await Room.countDocuments({ status: "active" })
+        const totalPages = Math.ceil(totalRooms / limit)
+
+        if (page > totalPages) {
+            return res.status(200).json({
+                meta: {
+                    totalPages,
+                    pageSize: 0,
+                    page,
+                    message: "Page not found",
+                },
+                data: {
+                    rooms: []
+                }
+            })
+        }
+
+        const rooms = await Room.find({ status: "active" }).sort({ [sort]: -1 }).skip(skip).limit(limit)
+        res.status(200).json({
+            meta: {
+                sort,
+                totalPages,
+                pageSize: rooms.length,
+                page
+            },
+            data: { rooms }
+        })
+
+    } catch (error) {
+        next(error)
+    }
+})
 
 // get available rooms
 bookersRouter.post('/available-rooms', async (req, res, next) => {

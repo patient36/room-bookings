@@ -1,54 +1,94 @@
 openapi: 3.0.0
 info:
-  title: Payment API
+  title: Loyalty Haven API
+  description: API for managing room bookings, payments, and user authentication.
   version: 1.0.0
-  description: API for handling payments via Momo and Card.
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:5000
     description: Local development server
+security:
+  - cookieAuth: []
+tags:
+  - name: Auth
+    description: User authentication and authorization
+  - name: Owner
+    description: Endpoints for room owners
+  - name: Booker
+    description: Endpoints for room bookers
+  - name: Admin
+    description: Endpoints for system administrators
+  - name: Payments
+    description: Payment processing endpoints
 paths:
-  /payment/momo:
+  /api/auth/register:
     post:
-      summary: Process a Momo payment
-      description: Endpoint to process mobile money payments.
+      tags:
+        - Auth
+      summary: Register a new user
+      description: |
+        Register a new user. OTPs are sent to the provided email and phone for verification.
+        A token (expires in 6 hours) is sent to the client via a cookie for authentication.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                amount:
-                  type: number
-                  description: The payment amount.
-                phone:
-                  type: string
-                  description: The payer's phone number.
-                roomId:
-                  type: string
-                  description: The ID of the room being booked.
-              required:
-                - amount
-                - phone
-                - roomId
+              $ref: "#/components/schemas/RegisterRequest"
       responses:
-        '200':
-          description: Payment processed successfully.
+        "200":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+      security: []
+  /api/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Log in a user
+      description: |
+        Log in a user. A token (expires in 6 hours) is sent to the client via a cookie for authentication.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+      security: []
+  /api/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Log out a user
+      description: |
+        Log out a user. Destroys the token in the cookie and redirects the client to the login page.
+      responses:
+        "200":
+          description: User logged out successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  payment:
-                    $ref: '#/components/schemas/Payment'
-        '400':
-          description: Bad request (e.g., missing required fields).
-        '404':
-          description: Room not found.
-  /payment/card:
+                  message:
+                    type: string
+                    example: "Logged out successfully."
+      security: []
+  /api/auth/validate-credentials:
     post:
-      summary: Process a Card payment
-      description: Endpoint to process card payments.
+      tags:
+        - Auth
+      summary: Validate credentials and send OTPs
+      description: |
+        Send OTPs to the provided email and phone for verification during registration.
       requestBody:
         required: true
         content:
@@ -56,22 +96,641 @@ paths:
             schema:
               type: object
               properties:
-                amount:
-                  type: number
-                  description: The payment amount.
-                currency:
+                phone:
                   type: string
-                  description: The payment currency (e.g., USD, EUR, RWF).
-                roomId:
+                email:
                   type: string
-                  description: The ID of the room being booked.
               required:
-                - amount
-                - currency
-                - roomId
+                - phone
+                - email
       responses:
-        '200':
-          description: Payment processed successfully.
+        "200":
+          description: OTPs sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "OTPs sent"
+      security: []
+  /api/auth/send-otp:
+    post:
+      tags:
+        - Auth
+      summary: Send OTP for password reset
+      description: |
+        Send an OTP to the provided email for password reset.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              required:
+                - email
+      responses:
+        "200":
+          description: OTP sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "OTP sent"
+      security: []
+  /api/auth/reset-password:
+    patch:
+      tags:
+        - Auth
+      summary: Reset user password
+      description: |
+        Reset the user's password using the OTP sent to their email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                oldPassword:
+                  type: string
+                newPassword:
+                  type: string
+                OTP:
+                  type: string
+              required:
+                - email
+                - oldPassword
+                - newPassword
+                - OTP
+      responses:
+        "200":
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password reset successfully."
+      security: []
+  /api/owner/rooms/my-rooms:
+    get:
+      tags:
+        - Owner
+      summary: Get all rooms owned by the user
+      description: |
+        Retrieve all rooms owned by the authenticated user. Requires an owner account.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of rooms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerRoomsResponse"
+  /api/owner/rooms/room/{id}:
+    get:
+      tags:
+        - Owner
+      summary: Get a room by ID
+      description: |
+        Retrieve a room owned by the authenticated user by its ID. Requires an owner account.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Room details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomDetailsResponse"
+    put:
+      tags:
+        - Owner
+      summary: Update a room
+      description: |
+        Update a room owned by the authenticated user. Requires an owner account.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoomRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Room updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Room updated successfully"
+                  room:
+                    $ref: "#/components/schemas/Room"
+    delete:
+      tags:
+        - Owner
+      summary: Delete a room
+      description: |
+        Delete a room owned by the authenticated user. Requires an owner account.
+        Cannot delete a room with active bookings.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Room deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Room deleted successfully"
+  /api/owner/rooms/create:
+    post:
+      tags:
+        - Owner
+      summary: Create a new room
+      description: |
+        Create a new room. Requires an owner account.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateRoomRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Room created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Room created successfully"
+                  room:
+                    $ref: "#/components/schemas/Room"
+  /api/owner/payments:
+    get:
+      tags:
+        - Owner
+      summary: Get all payments for bookings
+      description: |
+        Retrieve all payments for bookings of rooms owned by the authenticated user. Requires an owner account.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of payments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentsResponse"
+  /api/booker/rooms:
+    get:
+      tags:
+        - Booker
+      summary: Get all active rooms
+      description: |
+        Retrieve all active rooms in the system.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          schema:
+            type: string
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of rooms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllRoomsResponse"
+  /api/booker/rooms/book-room:
+    post:
+      tags:
+        - Booker
+      summary: Book a room
+      description: |
+        Book a room. Requires a booker account and a valid payment ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookRoomRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Room booked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Room booked successfully"
+                  booking:
+                    $ref: "#/components/schemas/Booking"
+  /api/booker/rooms/my-bookings:
+    get:
+      tags:
+        - Booker
+      summary: Get all bookings by the user
+      description: |
+        Retrieve all bookings made by the authenticated user. Requires a booker account.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingsResponse"
+  /api/booker/rooms/cancel-booking:
+    post:
+      tags:
+        - Booker
+      summary: Cancel a booking
+      description: |
+        Cancel a booking. Requires a booker account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelBookingRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Booking cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Booking cancelled successfully"
+                  booking:
+                    $ref: "#/components/schemas/Booking"
+  /api/booker/rooms/edit-booking:
+    put:
+      tags:
+        - Booker
+      summary: Edit a booking
+      description: |
+        Edit a booking. Requires a booker account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditBookingRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Booking updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Booking updated successfully"
+                  booking:
+                    $ref: "#/components/schemas/Booking"
+  /api/booker/rooms/available-rooms:
+    get:
+      tags:
+        - Booker
+      summary: Get available rooms
+      description: |
+        Retrieve all available rooms within a specified time interval.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvailableRoomsRequest"
+      responses:
+        "200":
+          description: List of available rooms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailableRoomsResponse"
+  /api/admin/register:
+    post:
+      tags:
+        - Admin
+      summary: Register a new admin
+      description: |
+        Register a new admin. Requires an admin token from another admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminRegisterRequest"
+      responses:
+        "200":
+          description: Admin registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminRegisterResponse"
+  /api/admin/get-token:
+    get:
+      tags:
+        - Admin
+      summary: Get an admin token
+      description: |
+        Retrieve a token to register a new admin. Requires an admin account.
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Admin token retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+  /api/admin/all-rooms:
+    get:
+      tags:
+        - Admin
+      summary: Get all rooms
+      description: |
+        Retrieve all rooms in the system. Requires an admin account.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          schema:
+            type: string
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of rooms
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllRoomsResponse"
+  /api/admin/all-bookings:
+    get:
+      tags:
+        - Admin
+      summary: Get all bookings
+      description: |
+        Retrieve all bookings in the system. Requires an admin account.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          schema:
+            type: string
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllBookingsResponse"
+  /api/admin/all-users:
+    get:
+      tags:
+        - Admin
+      summary: Get all users
+      description: |
+        Retrieve all users in the system. Requires an admin account.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          schema:
+            type: string
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllUsersResponse"
+  /api/admin/activate-room:
+    put:
+      tags:
+        - Admin
+      summary: Activate a room
+      description: |
+        Activate a room so it can be booked. Requires an admin account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActivateRoomRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Room activated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Room activated successfully"
+  /api/admin/deactivate-room:
+    put:
+      tags:
+        - Admin
+      summary: Deactivate a room
+      description: |
+        Deactivate a room so it cannot be booked. Requires an admin account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeactivateRoomRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Room deactivated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Room deactivated successfully"
+  /api/admin/revoke-owner:
+    put:
+      tags:
+        - Admin
+      summary: Revoke owner access
+      description: |
+        Revoke a user's room owner access. Requires an admin account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RevokeOwnerRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Owner access revoked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Room owner access revoked successfully"
+  /api/admin/grant-owner:
+    put:
+      tags:
+        - Admin
+      summary: Grant owner access
+      description: |
+        Grant a user room owner access. Requires an admin account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrantOwnerRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Owner access granted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Room owner access granted successfully"
+  /api/payments/card:
+    post:
+      tags:
+        - Payments
+      summary: Create a card payment intent
+      description: |
+        Create a card payment intent using Stripe. Requires a valid token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CardPaymentRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Payment intent created successfully
           content:
             application/json:
               schema:
@@ -79,48 +738,648 @@ paths:
                 properties:
                   clientSecret:
                     type: string
-                    description: Client secret for the PaymentIntent.
                   payment:
-                    $ref: '#/components/schemas/Payment'
-        '400':
-          description: Bad request (e.g., missing required fields).
-        '404':
-          description: Room not found.
+                    $ref: "#/components/schemas/Payment"
+  /api/payments/card/webhook:
+    post:
+      tags:
+        - Payments
+      summary: Stripe webhook for card payments
+      description: |
+        This endpoint is used by Stripe to send payment confirmation updates.
+        Marks the payment as completed or failed based on the webhook payload.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                type:
+                  type: string
+                data:
+                  type: object
+      responses:
+        "200":
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Webhook processed successfully"
+      security: []
+  /api/payments/momo:
+    post:
+      tags:
+        - Payments
+      summary: Create a MoMo payment
+      description: |
+        Create a MoMo payment using PawaPay. Requires a valid token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoMoPaymentRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: MoMo payment created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  payment:
+                    $ref: "#/components/schemas/Payment"
+  /api/payments/momo/webhook:
+    post:
+      tags:
+        - Payments
+      summary: PawaPay webhook for MoMo payments
+      description: |
+        This endpoint is used by PawaPay to send payment confirmation updates.
+        Marks the payment as completed or failed based on the webhook payload.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                type:
+                  type: string
+                data:
+                  type: object
+      responses:
+        "200":
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Webhook processed successfully"
+      security: []
 components:
   schemas:
-    Payment:
+    RegisterRequest:
       type: object
       properties:
-        _id:
+        email:
           type: string
-          description: The payment ID.
-        payer:
+          format: email
+        password:
           type: string
-          description: The ID of the payer.
-        receiver:
+          minLength: 6
+        name:
           type: string
-          description: The ID of the receiver.
-        amount:
-          type: number
-          description: The payment amount.
-        currency:
+        phone:
           type: string
-          description: The payment currency.
-        method:
+        PhoneOTP:
           type: string
-          description: The payment method (e.g., momo, card).
-        paymentId:
+        EmailOTP:
           type: string
-          description: The external payment ID (e.g., from Stripe or PawaPay).
+      required:
+        - email
+        - password
+        - name
+        - phone
+        - PhoneOTP
+        - EmailOTP
+    RegisterResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        accountType:
+          type: string
+        message:
+          type: string
+          example: "Logged in successfully."
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+    LoginResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        accountType:
+          type: string
+        message:
+          type: string
+          example: "Logged in successfully."
+    OwnerRoomsResponse:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            user:
+              type: string
+            page:
+              type: number
+            totalPages:
+              type: number
+            pageSize:
+              type: number
+        data:
+          type: object
+          properties:
+            rooms:
+              type: array
+              items:
+                $ref: "#/components/schemas/Room"
+    RoomDetailsResponse:
+      type: object
+      properties:
+        room:
+          $ref: "#/components/schemas/Room"
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+    UpdateRoomRequest:
+      type: object
+      properties:
+        name:
+          type: string
         description:
           type: string
-          description: A description of the payment.
+        area:
+          type: number
+        capacity:
+          type: number
+        price_per_hour:
+          type: number
+        street:
+          type: string
+        location:
+          type: string
+        amenities:
+          type: string
       required:
-        - _id
+        - name
+        - description
+        - area
+        - capacity
+        - price_per_hour
+        - street
+        - location
+        - amenities
+    CreateRoomRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        area:
+          type: number
+        capacity:
+          type: number
+        price_per_hour:
+          type: number
+        street:
+          type: string
+        location:
+          type: string
+        amenities:
+          type: string
+        room_image:
+          type: file
+          format: binary
+          description: The image file for the room.
+      required:
+        - name
+        - description
+        - area
+        - capacity
+        - price_per_hour
+        - street
+        - location
+        - amenities
+    PaymentsResponse:
+      type: object
+      properties:
+        payments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Payment"
+    AllRoomsResponse:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            sort:
+              type: string
+            totalPages:
+              type: number
+            pageSize:
+              type: number
+            page:
+              type: number
+        data:
+          type: object
+          properties:
+            rooms:
+              type: array
+              items:
+                $ref: "#/components/schemas/Room"
+    BookRoomRequest:
+      type: object
+      properties:
+        roomId:
+          type: string
+        checkIn:
+          type: string
+          format: date-time
+        checkOut:
+          type: string
+          format: date-time
+        paymentId:
+          type: string
+      required:
+        - roomId
+        - checkIn
+        - checkOut
+        - paymentId
+    BookingsResponse:
+      type: object
+      properties:
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+        currentPage:
+          type: number
+        totalPages:
+          type: number
+        totalBookings:
+          type: number
+    CancelBookingRequest:
+      type: object
+      properties:
+        roomId:
+          type: string
+        bookingId:
+          type: string
+      required:
+        - roomId
+        - bookingId
+    EditBookingRequest:
+      type: object
+      properties:
+        roomId:
+          type: string
+        bookingId:
+          type: string
+        checkIn:
+          type: string
+          format: date-time
+        checkOut:
+          type: string
+          format: date-time
+      required:
+        - roomId
+        - bookingId
+        - checkIn
+        - checkOut
+    AvailableRoomsRequest:
+      type: object
+      properties:
+        checkIn:
+          type: string
+          format: date-time
+        checkOut:
+          type: string
+          format: date-time
+      required:
+        - checkIn
+        - checkOut
+    AvailableRoomsResponse:
+      type: object
+      properties:
+        rooms:
+          type: array
+          items:
+            $ref: "#/components/schemas/Room"
+    AdminRegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        name:
+          type: string
+        phone:
+          type: string
+        PhoneOTP:
+          type: string
+        EmailOTP:
+          type: string
+        admin_token:
+          type: string
+      required:
+        - email
+        - password
+        - name
+        - phone
+        - PhoneOTP
+        - EmailOTP
+        - admin_token
+    AdminRegisterResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        accountType:
+          type: string
+        message:
+          type: string
+          example: "Logged in successfully."
+    AllBookingsResponse:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            sort:
+              type: string
+            totalPages:
+              type: number
+            pageSize:
+              type: number
+            page:
+              type: number
+        data:
+          type: object
+          properties:
+            bookings:
+              type: array
+              items:
+                $ref: "#/components/schemas/Booking"
+    AllUsersResponse:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            sort:
+              type: string
+            totalPages:
+              type: number
+            pageSize:
+              type: number
+            page:
+              type: number
+        data:
+          type: object
+          properties:
+            users:
+              type: array
+              items:
+                $ref: "#/components/schemas/User"
+    ActivateRoomRequest:
+      type: object
+      properties:
+        roomId:
+          type: string
+      required:
+        - roomId
+    DeactivateRoomRequest:
+      type: object
+      properties:
+        roomId:
+          type: string
+      required:
+        - roomId
+    RevokeOwnerRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+      required:
+        - userId
+    GrantOwnerRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+      required:
+        - userId
+    CardPaymentRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+        roomId:
+          type: string
+        currency:
+          type: string
+          enum: [USD, EUR, RWF]
+      required:
+        - amount
+        - roomId
+        - currency
+    MoMoPaymentRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+        roomId:
+          type: string
+        phone:
+          type: string
+        currency:
+          type: string
+          default: "RWF"
+      required:
+        - amount
+        - roomId
+        - phone
+        - currency
+    User:
+      $ref: "#/components/schemas/UserSchema"
+    Room:
+      $ref: "#/components/schemas/RoomSchema"
+    Booking:
+      $ref: "#/components/schemas/BookingSchema"
+    Payment:
+      $ref: "#/components/schemas/PaymentSchema"
+    UserSchema:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        accountType:
+          type: string
+          enum: [booker, owner, admin]
+        accountStatus:
+          type: string
+          enum: [active, banned, dormant]
+        bookings:
+          type: array
+          items:
+            type: string
+        rooms:
+          type: array
+          items:
+            type: string
+        phone:
+          type: string
+      required:
+        - name
+        - email
+        - password
+        - accountType
+        - accountStatus
+        - phone
+    RoomSchema:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        area:
+          type: number
+        capacity:
+          type: number
+        price_per_hour:
+          type: number
+        street:
+          type: string
+        location:
+          type: string
+        availability:
+          type: string
+        amenities:
+          type: array
+          items:
+            type: string
+        owner:
+          type: string
+        total_hours_booked:
+          type: number
+        images:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [active, inactive, deleted]
+      required:
+        - name
+        - price_per_hour
+        - location
+        - owner
+    BookingSchema:
+      type: object
+      properties:
+        bookerId:
+          type: string
+        roomId:
+          type: string
+        status:
+          type: string
+          enum: [pending, cancelled, completed, active]
+        checkIn:
+          type: string
+          format: date-time
+        checkOut:
+          type: string
+          format: date-time
+        duration:
+          type: number
+        fees:
+          type: number
+      required:
+        - bookerId
+        - roomId
+        - checkIn
+        - checkOut
+    PaymentSchema:
+      type: object
+      properties:
+        payer:
+          type: string
+        receiver:
+          type: string
+        roomId:
+          type: string
+        type:
+          type: string
+          enum: [deposit, refund, withdrawal]
+        method:
+          type: string
+          enum: [card, momo]
+        amount:
+          type: number
+        currency:
+          type: string
+          enum: [USD, EUR, RWF]
+          default: "RWF"
+        paymentId:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        used:
+          type: boolean
+        withdrawn:
+          type: boolean
+      required:
         - payer
         - receiver
+        - roomId
+        - type
+        - method
         - amount
         - currency
-        - method
-        - paymentId
-        - description
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: lh_token

@@ -32,6 +32,7 @@ authRouter.post('/register', async (req, res, next) => {
             id: user._id,
             name: user.name,
             email: user.email,
+            accountType: user.accountType,
             message: "User created successfully",
         })
     } catch (error) {
@@ -75,6 +76,7 @@ authRouter.post("/login", async (req, res, next) => {
             return res.status(200).json({
                 name: user.name,
                 email: user.email,
+                accountType: user.accountType,
                 message: "Logged in successfully."
             });
         } else {
@@ -139,5 +141,20 @@ authRouter.patch("/reset-password", async (req, res, next) => {
         next(error);
     }
 });
+
+authRouter.post('/send-otp', async (req, res, next) => {
+    try {
+        const { email } = req.body
+        if (!email) {
+            return res.status(400).json({ message: "Receiving email is required " })
+        }
+        const EmailOTP = await sendOTP(email)
+        const subject = "LOYALTY HAVEN - Verification Code"
+        await sendEmail(email, `Verify your email for LOYALTY HAVEN. OTP: ${EmailOTP.otp}`, subject)
+        res.status(200).json({ message: "OTP sent" })
+    } catch (error) {
+        next(error)
+    }
+})
 
 export default authRouter

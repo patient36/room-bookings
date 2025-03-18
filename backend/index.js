@@ -11,6 +11,7 @@ import adminRouter from "./routes/admin.routes.js";
 import paymentRouter from "./routes/payment.routes.js";
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { seedAdmin } from "./utils/seedAdmin.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000
@@ -32,7 +33,8 @@ const __dirname = path.dirname(__filename);
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, './public/redoc.html'));
+    // res.sendFile(path.join(__dirname, "public",'redoc.html'));
+    res.sendFile(path.join(__dirname, "public",'swagger.html'));
 });
 
 app.use('/api/auth', authRouter);
@@ -47,7 +49,10 @@ app.use(errorHandler);
 
 mongoose
     .connect(process.env.MONGO_DB_URI)
-    .then(() => console.log("Connected to MongoDB"))
+    .then(async () => {
+        await seedAdmin()
+        console.log("Connected to MongoDB")
+    })
     .catch((error) => console.log(error.message))
 
 app.listen(PORT, () => {

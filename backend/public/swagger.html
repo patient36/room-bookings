@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loyalty Haven API Documentation</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.0.1/swagger-ui.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    .header {
+      background: #2c3e50;
+      color: white;
+      padding: 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .swagger-container {
+      max-width: 90%;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    #swagger-ui {
+      padding: 20px;
+      border-radius: 8px;
+    }
+
+    /* Hide top bar */
+    .swagger-ui .topbar { 
+      display: none !important; 
+    }
+
+    /* Hide version, source file link, and download button */
+    .swagger-ui .info, 
+    .swagger-ui .download-url-wrapper { 
+      display: none !important; 
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    Loyalty Haven API Documentation
+  </div>
+
+  <div class="swagger-container">
+    <div id="swagger-ui"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.0.1/swagger-ui-bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.0.1/swagger-ui-standalone-preset.js"></script>
+
+  <script>
+    SwaggerUIBundle({
+      url: "./public/openapi.yml",
+      dom_id: "#swagger-ui",
+      deepLinking: true,
+      presets: [
+        SwaggerUIBundle.presets.apis,
+        SwaggerUIBundle.SwaggerUIStandalonePreset
+      ],
+      plugins: []
+    });
+  </script>
+</body>
+</html>

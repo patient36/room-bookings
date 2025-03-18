@@ -5,18 +5,127 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Documentation</title>
-    <script src="https://cdn.jsdelivr.net/npm/redoc@latest/bundles/redoc.standalone.js"></script>
+    <script src="./node_modules/redoc/bundles/redoc.standalone.js"></script>
+    <style>
+        /* Reset some default styles for a cleaner look */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Main content styling */
+        main {
+            padding: 20px;
+        }
+
+        /* Custom styles for the Redoc container */
+        #redoc-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* Custom styles for the Redoc theme */
+        :root {
+            --redoc-primary: #007BFF;
+            --redoc-secondary: #6c757d;
+            --redoc-background: #ffffff;
+            --redoc-text: #333333;
+        }
+
+        /* Enhancing theme colors for Redoc */
+        .redoc-initializer {
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Make the sidebar more modern */
+        .sidebar {
+            background-color: #f8f9fa;
+            border-right: 2px solid #ddd;
+        }
+
+        /* Sidebar text styling */
+        .sidebar ul li {
+            font-size: 16px;
+            padding: 8px 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        .sidebar ul li:hover {
+            background-color: #007BFF;
+            color: #fff;
+        }
+
+        /* Right Panel Styling */
+        .right-panel {
+            background-color: #222;
+            color: #fff;
+        }
+
+        /* Responsive Styling for better mobile view */
+        @media (max-width: 768px) {
+            header {
+                font-size: 20px;
+            }
+
+            #redoc-container {
+                padding: 10px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <div id="redoc-container"></div>
+    <main>
+        <div id="redoc-container"></div>
+    </main>
+
     <script>
         Redoc.init('./public/openapi.yml', {
             scrollYOffset: 50,
             hideDownloadButton: true,
             theme: {
                 colors: {
-                    primary: { main: '#007BFF' },
+                    primary: {
+                        main: '#007BFF',
+                    },
+                    text: {
+                        primary: '#333333',
+                        secondary: '#6c757d',
+                    },
+                    http: {
+                        get: '#6bbd5b',
+                        post: '#248fb2',
+                        put: '#9b708b',
+                        delete: '#e27a7a',
+                    },
+                },
+                typography: {
+                    fontSize: '14px',
+                    fontFamily: 'Arial, sans-serif',
+                    headings: {
+                        fontFamily: 'Georgia, serif',
+                        fontWeight: 'bold',
+                    },
+                },
+                sidebar: {
+                    backgroundColor: '#f8f9fa',
+                    textColor: '#333333',
+                    hoverColor: '#007BFF',
+                },
+                rightPanel: {
+                    backgroundColor: '#222',
+                    textColor: '#fff',
                 },
             },
         }, document.getElementById('redoc-container'));

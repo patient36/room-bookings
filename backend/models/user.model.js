@@ -43,7 +43,7 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: [true, "Phone is required"],
             trim: true,
-            match: [/^\+[1-9]\d{1,14}$/, "Phone number must start with '+' followed by 2-15 digits"],
+            match: [/^\d{4,15}$/, "Phone number must contain only numbers (4-15 digits)"],
         },
     },
     {

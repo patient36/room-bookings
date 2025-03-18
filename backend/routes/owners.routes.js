@@ -37,7 +37,7 @@ ownersRouter.get('/my-rooms', [protect, isOwner], async (req, res, next) => {
             });
         }
 
-        const rooms = await Room.find({ owner: user._id }).skip(skip).limit(limit);
+        const rooms = await Room.find({ owner: user._id, status: { $ne: "deleted" } }).skip(skip).limit(limit);
 
         res.status(200).json({
             meta: {
@@ -164,49 +164,50 @@ ownersRouter.delete('/room/:id', [protect, isOwner], async (req, res, next) => {
         const user = req.user;
         const roomId = req.params.id;
 
+        // Find the room
         const room = await Room.findOne({ _id: roomId, owner: user._id });
         if (!room) {
             return res.status(404).json({ message: "Room not found" });
         }
 
-        const bookings = await Booking.find({ roomId }).populate("bookerId");
-
-        // Notify bookers
-        if (bookings.length > 0) {
-            const bookingNotifications = bookings.map(async (booking) => {
-                const message = `Dear ${booking.bookerId.name}, we are deeply sorry to inform you that your booking for ${room.name} from ${new Date(booking.checkIn).toISOString()} to ${new Date(booking.checkOut).toISOString()} was cancelled because the room is no longer available. Apologies for the inconvenience.`;
-                const subject = "Booking Cancelled";
-                return Promise.all([
-                    sendEmail(booking.bookerId.email, message, subject),
-                    sendSMS(booking.bookerId.phone, message)
-                ]);
-            });
-            await Promise.all(bookingNotifications);
+        // Check for active bookings
+        const activeBookings = await Booking.findOne({ roomId, status: "active" });
+        if (activeBookings) {
+            return res.status(400).json({ message: "Cannot delete room with active bookings." });
         }
 
-        // Notify room owner
-        const ownerMessage = `Dear ${user.name}, your room "${room.name}" was deleted successfully.`;
-        const ownerSubject = "Room Deleted";
-        await Promise.all([
-            sendEmail(user.email, ownerMessage, ownerSubject),
-            sendSMS(user.phone, ownerMessage)
-        ]);
+        // Find pending bookings
+        const pendingBookings = await Booking.find({ roomId, status: "pending" }).populate("bookerId");
 
-        // Delete room images (run in parallel)
-        const imageDeletions = room.images.map((image) => deleteFile(image));
-        await Promise.all(imageDeletions);
+        // Refund and cancel pending bookings
+        if (pendingBookings.length > 0) {
+            const refundRequests = pendingBookings.map(async (booking) => {
+                await processRefund(booking); // Implement refund logic
+                booking.status = "canceled";
+                await booking.save();
 
-        // Delete related bookings and room
-        await Promise.all([
-            Booking.deleteMany({ roomId: room._id }),
-            Room.deleteOne({ _id: room._id })
-        ]);
+                const message = `Dear ${booking.bookerId.name}, your booking for "${room.name}" has been canceled, and your refund is being processed.`;
+                await sendEmail(booking.bookerId.email, message, "Booking Canceled & Refunded");
+            });
 
-        res.status(200).json({ message: "Room deleted successfully" });
+            await Promise.all(refundRequests);
+        }
+
+        // Mark the room as deleted (soft delete)
+        room.status = "deleted"; // Assuming `status` exists in your schema
+        await room.save();
+
+        // Notify owner
+        const ownerMessage = `Dear ${user.name}, your room "${room.name}" was marked as deleted.`;
+        await sendEmail(user.email, ownerMessage, "Room Deleted");
+
+        res.status(200).json({ message: "Room marked as deleted successfully." });
+
     } catch (error) {
         next(error);
     }
 });
+
 
 
 //Payments for my rooms

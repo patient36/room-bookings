@@ -78,6 +78,7 @@ adminRouter.post('/register', async (req, res, next) => {
             id: user._id,
             name: user.name,
             email: user.email,
+            accountType: user.accountType,
             message: "System admin created successfully",
         });
     } catch (error) {
