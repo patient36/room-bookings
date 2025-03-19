@@ -9,6 +9,7 @@ import ownersRouter from "./routes/owners.routes.js";
 import bookersRouter from "./routes/bookers.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 import paymentRouter from "./routes/payment.routes.js";
+import searchRouter from "./routes/search.route.js";
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { seedAdmin } from "./utils/seedAdmin.js";
@@ -53,6 +54,7 @@ app.use('/api/owner/rooms', ownersRouter);
 app.use('/api/booker/rooms', bookersRouter);
 app.use('/api/admin', adminRouter)
 app.use('/api/payments', paymentRouter)
+app.use('/api/search', searchRouter)
 
 app.use(notFound);
 app.use(errorHandler);
