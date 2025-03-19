@@ -9,6 +9,8 @@ servers:
 security:
   - cookieAuth: []
 tags:
+  - name: Search
+    description: Search for rooms and users
   - name: Auth
     description: User authentication and authorization
   - name: Owner
@@ -20,6 +22,27 @@ tags:
   - name: Payments
     description: Payment processing endpoints
 paths:
+  /api/search:
+    get:
+      tags:
+        - Search
+      summary: Search for rooms
+      description: |
+        Search for rooms and users based on name
+      parameters:
+        - name: term
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+      security: []
   /api/auth/register:
     post:
       tags:
@@ -833,6 +856,17 @@ paths:
       security: []
 components:
   schemas:
+    SearchResponse:
+      type: object
+      properties:
+        rooms:
+          type: array
+          items:
+            $ref: "#/components/schemas/Room"
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
     RegisterRequest:
       type: object
       properties:
