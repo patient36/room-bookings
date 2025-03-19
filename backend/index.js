@@ -25,7 +25,15 @@ app.use((req, res, next) => {
     }
 })
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+
+// Auth
+app.use(
+    cors({
+        origin: process.env.CLIENT,
+        credentials: true,
+        optionsSuccessStatus: 200,
+    })
+);
 app.use(cookieParser());
 
 const __filename = fileURLToPath(import.meta.url)
@@ -33,8 +41,11 @@ const __dirname = path.dirname(__filename);
 app.use(express.static(__dirname));
 
 app.get('/', (req, res) => {
-    // res.sendFile(path.join(__dirname, "public",'redoc.html'));
-    res.sendFile(path.join(__dirname, "public",'swagger.html'));
+    res.sendFile(path.join(__dirname, "public", 'swagger.html'));
+});
+
+app.get("/docs", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", 'redoc.html'));
 });
 
 app.use('/api/auth', authRouter);
