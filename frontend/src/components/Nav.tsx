@@ -36,7 +36,7 @@ const Nav = () => {
                         <Link href="#" className="text-gray-700 hover:text-blue-600 font-bold">
                             Rooms
                         </Link>
-                        <Link href="#" className="rounded-full px-6 bg-slate-700 text-white p-2 hover:text-pink-600 transition-all">
+                        <Link href="#" className="rounded-full px-6 bg-slate-700 font-bold text-white p-2 hover:text-pink-600 transition-all">
                             Sign In
                         </Link>
                     </div>

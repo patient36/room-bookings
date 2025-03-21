@@ -4,14 +4,13 @@ import Image from 'next/image';
 const Home: NextPage = () => {
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Hero Section */}
       <div className="relative bg-blue-600 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl font-bold text-white mb-4">
             Find Your Perfect Stay
           </h1>
           <p className="text-xl text-blue-100 mb-8">
-            Book hotels, vacation rentals, and more at the best prices.
+            Book rooms readily availble for you at the best prices.
           </p>
 
           {/* Search Bar */}
@@ -19,13 +18,13 @@ const Home: NextPage = () => {
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
               <input
                 type="date"
-                className="p-3 border border-gray-300 rounded-lg text-black"
+                className="p-3 border border-gray-300 rounded-lg text-black w-2/5 max-sm:w-full"
               />
               <input
                 type="date"
-                className="p-3 border border-gray-300 rounded-lg text-black"
+                className="p-3 border border-gray-300 rounded-lg text-black w-2/5 max-sm:w-full"
               />
-              <button className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700">
+              <button className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 w-1/5 max-sm:w-full">
                 Search
               </button>
             </div>
