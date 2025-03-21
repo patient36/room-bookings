@@ -9,7 +9,7 @@ import ownersRouter from "./routes/owners.routes.js";
 import bookersRouter from "./routes/bookers.routes.js";
 import adminRouter from "./routes/admin.routes.js";
 import paymentRouter from "./routes/payment.routes.js";
-import searchRouter from "./routes/search.route.js";
+import searchRouter from "./routes/search.routes.js";
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { seedAdmin } from "./utils/seedAdmin.js";
