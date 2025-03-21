@@ -80,7 +80,11 @@ ownersRouter.get('/room/:id', [protect, isOwner], async (req, res, next) => {
 ownersRouter.post('/create', [protect, isOwner, upload.fields([{ name: "room_image", minCount: 1 }])], async (req, res, next) => {
     try {
         const user = req.user;
-        const { name, description, area, capacity, price_per_hour, street, location, amenities } = req.body;
+        const { description, area, capacity, price_per_hour, amenities } = req.body;
+        const name = req.body.name?.toString().trim().replace(/\s+/g, " ");
+        const location = req.body.location?.toString().trim().replace(/\s+/g, " ");
+        const street = req.body.street?.toString().trim().replace(/\s+/g, " ");
+
 
         // Validate required fields
         if (!name || !description || !price_per_hour || !location) {
@@ -182,7 +186,7 @@ ownersRouter.delete('/room/:id', [protect, isOwner], async (req, res, next) => {
         // Refund and cancel pending bookings
         if (pendingBookings.length > 0) {
             const refundRequests = pendingBookings.map(async (booking) => {
-                await processRefund(booking); // Implement refund logic
+                // await processRefund(booking);
                 booking.status = "canceled";
                 await booking.save();
 
@@ -194,7 +198,7 @@ ownersRouter.delete('/room/:id', [protect, isOwner], async (req, res, next) => {
         }
 
         // Mark the room as deleted (soft delete)
-        room.status = "deleted"; // Assuming `status` exists in your schema
+        room.status = "deleted";
         await room.save();
 
         // Notify owner
@@ -207,8 +211,6 @@ ownersRouter.delete('/room/:id', [protect, isOwner], async (req, res, next) => {
         next(error);
     }
 });
-
-
 
 //Payments for my rooms
 ownersRouter.get('/payments', [protect, isOwner], async (req, res, next) => {

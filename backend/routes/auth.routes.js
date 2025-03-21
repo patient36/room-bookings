@@ -9,7 +9,8 @@ const authRouter = express.Router()
 
 authRouter.post('/register', async (req, res, next) => {
     try {
-        const { email, password, name, phone, PhoneOTP, EmailOTP } = req.body
+        const { email, password, phone, PhoneOTP, EmailOTP } = req.body
+        const name = req.body.name?.toString().trim().replace(/\s+/g, " ");
 
         if (!EmailOTP || !PhoneOTP) {
             return res.status(400).json({ message: "Check your emails and SMS for verification codes." });
