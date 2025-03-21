@@ -23,7 +23,7 @@ const Search = () => {
             <div className="relative w-full max-w-md">
                 <input
                     type="text"
-                    placeholder="Search for rooms"
+                    placeholder="Search for rooms,locations..."
                     value={query}
                     onBlur={() => setQuery("")}
                     onChange={(e) => {

@@ -29,7 +29,12 @@ const Nav = () => {
                 <div className="flex justify-between items-center transition-all duration-300">
                     <div className="text-2xl font-bold flex flex-row gap-2 items-center transition-all duration-300 w-1/3 max-sm:w-8">
                         <Logo />
-                        <p className='text-blue-900 max-sm:hidden'>Loyalty Haven</p>
+                        
+                        <p className="bg-gradient-to-r from-blue-900 to-blue-700 text-transparent bg-clip-text font-extrabold text-3xl tracking-wide drop-shadow-md max-sm:hidden">
+                            Loyalty Haven
+                        </p>
+
+
                     </div>
                     <Search />
                     <div className="flex justify-end items-center gap-3 space-x-4 w-1/3 max-sm:hidden">
