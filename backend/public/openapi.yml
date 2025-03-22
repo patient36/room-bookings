@@ -207,6 +207,38 @@ paths:
                     type: string
                     example: "Password reset successfully."
       security: []
+  /api/auth/forgot-password:
+    post:
+      tags:
+        - Auth
+      summary: Recover user password
+      description: Clear previous password and allow user to set a new one using OTP sent to email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                OTP:
+                  type: string
+              required:
+                - email
+                - OTP
+      responses:
+        "200":
+          description: Password recovery
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Your OTP is now your temporary password. Use it to log in and change it immediately for your account's security."
+      security: []
   /api/owner/rooms/my-rooms:
     get:
       tags:

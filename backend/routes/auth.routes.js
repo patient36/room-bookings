@@ -158,4 +158,32 @@ authRouter.post('/send-otp', async (req, res, next) => {
     }
 })
 
+authRouter.post("/forgot-password", async (req, res, next) => {
+    try {
+        const { email, OTP } = req.body;
+
+        // Validate input
+        if (!email?.trim() || !OTP?.trim()) {
+            return res.status(400).json({ message: "Email and OTP are required." });
+        }
+
+        // Verify OTP
+        const isValid = await verifyOTP(email, OTP);
+        if (!isValid.success) {
+            return res.status(400).json({ message: "Invalid or expired OTP." });
+        }
+
+        // Find the user
+        const user = await User.findOne({ email }).select("+password");
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        user.password = OTP.toString();
+        await user.save();
+        return res.status(200).json({ message: "Your OTP is now your temporary password. Use it to log in and change it immediately for your account's security." });
+    } catch (error) {
+        next(error);
+    }
+});
 export default authRouter
