@@ -192,43 +192,79 @@ bookersRouter.get('/my-bookings', [protect, isActive], async (req, res, next) =>
 // get all active rooms
 bookersRouter.get('/', async (req, res, next) => {
     try {
-        const sort = req.query.sort || "createdAt"
-        const page = parseInt(req.query.page, 10) || 1
-        const limit = parseInt(req.query.limit, 10) || 10
-        const skip = (page - 1) * limit
+        const { sort = "createdAt", page = 1, limit = 10, minPrice, maxPrice, minCapacity } = req.query;
+        const pageNum = parseInt(page, 10) || 1;
+        const limitNum = parseInt(limit, 10) || 10;
+        const skip = (pageNum - 1) * limitNum;
+        let filter = { status: "active" };
 
-        const totalRooms = await Room.countDocuments({ status: "active" })
-        const totalPages = Math.ceil(totalRooms / limit)
+        // Price range filtering
+        if (minPrice || maxPrice) {
+            filter.price_per_hour = {};
+            if (minPrice) filter.price_per_hour.$gte = parseInt(minPrice, 10);
+            if (maxPrice) filter.price_per_hour.$lte = parseInt(maxPrice, 10);
+        }
 
-        if (page > totalPages) {
+        // Capacity filter (min only)
+        if (minCapacity) {
+            filter.capacity = { $gte: parseInt(minCapacity, 10) };
+        }
+
+        const totalRooms = await Room.countDocuments(filter);
+        const totalPages = Math.ceil(totalRooms / limitNum);
+
+        if (pageNum > totalPages) {
             return res.status(200).json({
                 meta: {
                     totalPages,
                     pageSize: 0,
-                    page,
+                    page: pageNum,
                     message: "Page not found",
                 },
-                data: {
-                    rooms: []
-                }
-            })
+                data: { rooms: [] }
+            });
         }
 
-        const rooms = await Room.find({ status: "active" }).sort({ [sort]: -1 }).skip(skip).limit(limit)
+        let sortOptions = {};
+        if (sort) {
+            sort.split(',').forEach(field => {
+                sortOptions[field] = -1;
+            });
+        }
+
+        const rooms = await Room.find(filter)
+            .sort(sortOptions)
+            .skip(skip)
+            .limit(limitNum);
+
         res.status(200).json({
             meta: {
                 sort,
                 totalPages,
                 pageSize: rooms.length,
-                page
+                page: pageNum
             },
             data: { rooms }
-        })
-
+        });
     } catch (error) {
-        next(error)
+        next(error);
     }
-})
+});
+
+// get room by id
+bookersRouter.get('/:id', async (req, res, next) => {
+    try {
+        const roomId = req.params.id;
+        const room = await Room.findOne({ _id: roomId, status: "active" }).select("-total_hours_booked -owner -status");
+        if (!room) {
+            return res.status(404).json({ message: 'Room not found' });
+        }
+
+        res.status(200).json({ room });
+    } catch (error) {
+        next(error);
+    }
+});
 
 // get available rooms
 bookersRouter.post('/available-rooms', async (req, res, next) => {
