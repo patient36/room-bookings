@@ -124,7 +124,7 @@ const Home: NextPage = () => {
             Sign up now and unlock exclusive deals & discounts!
           </p>
           <Link
-            href="#"
+            href="/register"
             className="inline-block px-8 py-4 bg-white text-blue-600 font-semibold text-lg rounded-full shadow-xl transition-all duration-300 ease-in-out transform hover:scale-105 hover:bg-blue-100"
           >
             Sign Up Now

@@ -22,26 +22,26 @@ const Nav = () => {
 
     return (
         <nav
-            className={`fixed top-0 left-0 right-0 z-10 bg-white shadow-lg transition-all  ${isScrolled ? 'py-2' : 'py-4'
+            className={`fixed top-0 left-0 right-0 z-20 bg-white shadow-lg transition-all  ${isScrolled ? 'py-2' : 'py-3'
                 }`}>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center transition-all duration-300">
                     <div className="text-2xl font-bold flex flex-row gap-2 items-center transition-all duration-300 w-1/3 max-sm:w-8">
                         <Logo />
-                        
-                        <p className="bg-gradient-to-r from-blue-900 to-blue-700 text-transparent bg-clip-text font-extrabold text-3xl tracking-wide drop-shadow-md max-sm:hidden">
+
+                        <Link href='/' className="bg-gradient-to-r from-blue-900 to-blue-700 text-transparent bg-clip-text font-extrabold text-3xl tracking-wide drop-shadow-md max-sm:hidden cursor-pointer">
                             Loyalty Haven
-                        </p>
+                        </Link>
 
 
                     </div>
                     <Search />
                     <div className="flex justify-end items-center gap-3 space-x-4 w-1/3 max-sm:hidden">
-                        <Link href="#" className="text-gray-700 hover:text-blue-600 font-bold">
+                        <Link href="/rooms" className="text-gray-700 hover:text-blue-600 font-bold">
                             Rooms
                         </Link>
-                        <Link href="#" className="rounded-full px-6 bg-slate-700 font-bold text-white p-2 hover:text-pink-600 transition-all">
+                        <Link href="/login" className="rounded-full px-6 bg-slate-700 font-bold text-white p-2 hover:text-pink-600 transition-all">
                             Sign In
                         </Link>
                     </div>

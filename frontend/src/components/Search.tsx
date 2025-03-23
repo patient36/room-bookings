@@ -1,22 +1,18 @@
 import { useState } from 'react';
+import { rooms } from '@/app/rooms/rooms';
 
 const Search = () => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<string[]>([]);
 
     const handleSearch = (searchQuery: string) => {
-        const mockResults = [
-            'Deluxe Room',
-            'Executive Suite',
-            'Family Room',
-            'Ocean View Room',
-            'Standard Room',
-        ].filter((room) =>
-            room.toLowerCase().includes(searchQuery.toLowerCase())
+        const filteredRooms = rooms.filter(room =>
+            room.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
-        setResults(mockResults);
+        setResults(filteredRooms.map(room => room.name));
     };
+
 
     return (
         <div className="flex items-center justify-center w-1/3 max-sm:w-2/3 relative">
