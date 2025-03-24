@@ -1,5 +1,8 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { Carousel } from "react-responsive-carousel";
+import "react-responsive-carousel/lib/styles/carousel.min.css";
+import { FaChevronLeft, FaChevronRight, FaTimes, FaTh } from "react-icons/fa";
 
 interface ImageModalProps {
   images: string[];
@@ -9,10 +12,12 @@ interface ImageModalProps {
 const ImageModal: React.FC<ImageModalProps> = ({ images, onClose }) => {
   const [visibleImages, setVisibleImages] = useState<string[]>([]);
   const [page, setPage] = useState(1);
+  const [isCarouselView, setIsCarouselView] = useState(true);
+  const [carouselStartIndex, setCarouselStartIndex] = useState(0);
   const imagesPerPage = 21;
 
   // Calculate the number of rows needed based on the grid template
-  const numRows = Math.ceil(visibleImages.length / 6) * 2; // Adjust based on your layout
+  const numRows = Math.ceil(visibleImages.length / 6) * 2;
 
   // Handle closing the modal on 'Escape' key press
   useEffect(() => {
@@ -23,7 +28,6 @@ const ImageModal: React.FC<ImageModalProps> = ({ images, onClose }) => {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [onClose]);
 
-  // Load images for the current page
   useEffect(() => {
     const startIndex = (page - 1) * imagesPerPage;
     const endIndex = startIndex + imagesPerPage;
@@ -31,27 +35,27 @@ const ImageModal: React.FC<ImageModalProps> = ({ images, onClose }) => {
   }, [images, page]);
 
   const gridTemplate = [
-    "col-span-2 row-span-2", // 1 (2x2 square)
-    "col-start-3 row-span-1", // 2 (1x1 square)
-    "col-start-3 row-start-2 row-span-1", // 3 (1x1 square)
-    "col-span-2 row-span-2 col-start-4 row-start-1", // 4 (2x2 square)
-    "col-start-6 row-span-1", // 5 (1x1 square)
-    "col-start-6 row-start-2 row-span-1", // 6 (1x1 square)
-    "row-start-3 row-span-1", // 7 (1x1 square)
-    "row-start-3 row-span-1", // 8 (1x1 square)
-    "col-start-1 row-start-4 row-span-1", // 9 (1x1 square)
-    "col-start-2 row-start-4 row-span-1", // 10 (1x1 square)
-    "col-span-2 row-span-2 col-start-3 row-start-3", // 11 (2x2 square)
-    "col-start-5 row-start-3 row-span-1", // 12 (1x1 square)
-    "col-start-6 row-start-3 row-span-1", // 13 (1x1 square)
-    "col-start-5 row-start-4 row-span-1", // 14 (1x1 square)
-    "col-start-6 row-start-4 row-span-1", // 15 (1x1 square)
-    "col-span-2 row-span-2 row-start-5", // 16 (2x2 square)
-    "col-start-3 row-start-5 row-span-1", // 17 (1x1 square)
-    "col-start-4 row-start-5 row-span-1", // 18 (1x1 square)
-    "col-start-3 row-start-6 row-span-1", // 19 (1x1 square)
-    "col-start-4 row-start-6 row-span-1", // 20 (1x1 square)
-    "col-span-2 row-span-2 col-start-5 row-start-5", // 21 (2x2 square)
+    "col-span-2 row-span-2",
+    "col-start-3 row-span-1",
+    "col-start-3 row-start-2 row-span-1",
+    "col-span-2 row-span-2 col-start-4 row-start-1",
+    "col-start-6 row-span-1",
+    "col-start-6 row-start-2 row-span-1",
+    "row-start-3 row-span-1",
+    "row-start-3 row-span-1",
+    "col-start-1 row-start-4 row-span-1",
+    "col-start-2 row-start-4 row-span-1",
+    "col-span-2 row-span-2 col-start-3 row-start-3",
+    "col-start-5 row-start-3 row-span-1",
+    "col-start-6 row-start-3 row-span-1",
+    "col-start-5 row-start-4 row-span-1",
+    "col-start-6 row-start-4 row-span-1",
+    "col-span-2 row-span-2 row-start-5",
+    "col-start-3 row-start-5 row-span-1",
+    "col-start-4 row-start-5 row-span-1",
+    "col-start-3 row-start-6 row-span-1",
+    "col-start-4 row-start-6 row-span-1",
+    "col-span-2 row-span-2 col-start-5 row-start-5",
   ];
 
   const handleNextPage = () => {
@@ -60,6 +64,15 @@ const ImageModal: React.FC<ImageModalProps> = ({ images, onClose }) => {
 
   const handlePrevPage = () => {
     setPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleImageClick = (index: number) => {
+    setIsCarouselView(true);
+    setCarouselStartIndex(index);
+  };
+
+  const handleCloseCarousel = () => {
+    setIsCarouselView(false);
   };
 
   if (!images || images.length === 0) {
@@ -80,64 +93,132 @@ const ImageModal: React.FC<ImageModalProps> = ({ images, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 h-screen w-screen"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div className="bg-white rounded-lg w-full max-w-[90vw] max-h-[90vh] overflow-y-auto p-6">
-        <h2 id="modal-title" className="text-xl font-bold mb-4">
-          Image Gallery
+      <div className="bg-white rounded-lg w-full max-w-[90vw] h-[95vh] overflow-y-auto p-6">
+        <h2 id="modal-title" className="text-xl font-bold mb-4 text-blue-900">
+          Room pictures
         </h2>
-        <div
-          className="grid grid-cols-6 gap-4 p-4 overflow-y-auto"
-          style={{
-            gridTemplateRows: `repeat(${numRows}, auto)`, // Use `auto` for row height
-          }}
-        >
-          {visibleImages.map((image, index) => (
-            <div
-              key={index}
-              className={`relative ${gridTemplate[index % gridTemplate.length]} aspect-square overflow-hidden`}
+
+        {/* Carousel View (Always visible on small screens, optional on large screens) */}
+        <div className={`${isCarouselView ? "block" : "hidden"}`}>
+          <div className="relative">
+            {/* Close Button for Small Screens */}
+            <button
+              onClick={onClose}
+              className="lg:hidden absolute top-2 right-2 cursor-pointer bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors duration-200 z-50"
             >
-              <Image
-                src={image}
-                alt={`Image ${index + 1}`}
-                fill // Use `fill` to make the image fill the container
-                className="object-cover rounded-lg" // Ensure the image covers the container
-                onError={(e) => {
-                  console.error("Failed to load image:", image);
-                  e.currentTarget.src = "/path/to/fallback/image.jpg"; // Fallback image
-                }}
-              />
-              <p className="absolute bottom-2 left-2 text-sm text-white bg-black bg-opacity-50 px-2 py-1 rounded">
-                Image {index + 1}
-              </p>
-            </div>
-          ))}
+              <FaTimes className="w-5 h-5 max-sm:h-3 max-sm:w-3" />
+            </button>
+
+            <Carousel
+              selectedItem={carouselStartIndex}
+              showThumbs={false}
+              infiniteLoop
+              showStatus={false}
+              showIndicators={false}
+              renderArrowPrev={(onClickHandler, hasPrev) =>
+                hasPrev && (
+                  <button
+                    onClick={onClickHandler}
+                    className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-black/70 text-white p-2 rounded-full z-10 hover:bg-opacity-70 transition-all"
+                  >
+                    <FaChevronLeft className="w-5 h-5 max-sm:h-3 max-sm:w-3" />
+                  </button>
+                )
+              }
+              renderArrowNext={(onClickHandler, hasNext) =>
+                hasNext && (
+                  <button
+                    onClick={onClickHandler}
+                    className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-black/70 text-white p-2 rounded-full z-10 hover:bg-opacity-70 transition-all"
+                  >
+                    <FaChevronRight className="w-5 h-5 max-sm:h-3 max-sm:w-3" />
+                  </button>
+                )
+              }
+              className="w-full max-w-[800px] mx-auto"
+            >
+              {images.map((image, index) => (
+                <div key={index} className="relative aspect-3/2 max-sm:aspect-square">
+                  <Image
+                    src={image}
+                    alt={`Image ${index + 1}`}
+                    sizes="(max-width: 768px) 90vw, (max-width: 1200px) 50vw, 33vw"
+                    fill
+                    quality={100}
+                    className="object-cover rounded-lg"
+                  />
+                  <p className="absolute z-40 bottom-2 left-2 text-pink-500 p-2 rounded-md bg-black/40 text-xs">{index + 1} of {images.length}</p>
+                </div>
+              ))}
+            </Carousel>
+
+
+            <button
+              onClick={handleCloseCarousel}
+              className="hidden lg:block absolute top-2 right-2 bg-pink-600 cursor-pointer text-white p-3 rounded-full hover:bg-pink-700 transition-colors duration-200 "
+            >
+              <FaTh className="w-5 h-5" />
+            </button>
+          </div>
         </div>
-        <div className="flex justify-between mt-4"> {/* Reduced margin-top */}
-          <button
-            onClick={handlePrevPage}
-            disabled={page === 1}
-            className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
+
+        {/* Grid View (Only visible on large screens when isCarouselView is false) */}
+        <div className={`${isCarouselView ? "hidden" : "block"}`}>
+          <div
+            className="grid grid-cols-6 gap-4 p-4 overflow-y-auto"
+            style={{
+              gridTemplateRows: `repeat(${numRows}, auto)`,
+            }}
           >
-            Previous
-          </button>
-          <button
-            onClick={onClose}
-            className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200"
-            aria-label="Close modal"
-          >
-            Close
-          </button>
-          <button
-            onClick={handleNextPage}
-            disabled={page * imagesPerPage >= images.length}
-            className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
-          >
-            Next
-          </button>
+            {visibleImages.map((image, index) => (
+              <div
+                key={index}
+                className={`relative ${gridTemplate[index % gridTemplate.length]} aspect-square overflow-hidden cursor-pointer`}
+                onClick={() => handleImageClick(index + (page - 1) * imagesPerPage)}
+              >
+                <Image
+                  src={image}
+                  alt={`Image ${index + 1}`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover rounded-lg"
+                />
+                <p className="absolute bottom-2 left-2 text-sm text-white bg-black bg-opacity-50 px-2 py-1 rounded">
+                  Image {index + 1}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination Buttons */}
+          <div className="flex justify-between mt-4">
+            <button
+              onClick={handlePrevPage}
+              disabled={page === 1}
+              className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              onClick={onClose}
+              className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              aria-label="Close modal"
+            >
+              Close
+            </button>
+            <button
+              onClick={handleNextPage}
+              disabled={page * imagesPerPage >= images.length}
+              className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </div>

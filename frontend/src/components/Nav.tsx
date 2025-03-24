@@ -51,10 +51,14 @@ const Nav = () => {
                         </button>
                         {isVisible && (
                             <div className="absolute right-0 mt-2 w-48 bg-sky-50 rounded-lg shadow-lg font-bold">
-                                <Link href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                                <Link
+                                    onClick={() => tooggleVisible()}
+                                    href="/rooms" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                                     Rooms
                                 </Link>
-                                <Link href="#" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                                <Link
+                                    onClick={() => tooggleVisible()}
+                                    href="/login" className="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                                     Sign In
                                 </Link>
                             </div>

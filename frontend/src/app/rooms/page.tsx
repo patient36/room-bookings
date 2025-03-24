@@ -217,7 +217,7 @@ const Rooms = () => {
                                     />
                                 )}
                             >
-                                {room.images.map((image, index) => (
+                                {room.images.slice(0,6).map((image, index) => (
                                     <div key={index} className="h-42">
                                         <Image
                                             height={400}

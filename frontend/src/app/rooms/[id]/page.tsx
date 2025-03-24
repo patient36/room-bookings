@@ -63,21 +63,22 @@ const Room = ({ params }: { params: Promise<{ id: string }> }) => {
     return (
         <div className="min-h-screen bg-gray-100 py-8">
             <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-                {/* Image Grid (2x2) */}
                 <div className="grid grid-cols-2 gap-2 p-2">
                     {room.images.slice(0, 4).map((image, index) => (
                         <div key={index} className="relative aspect-square">
                             <Image
                                 src={image}
                                 alt={`Room ${room.name} image ${index + 1}`}
-                                fill // Fill the container
-                                className="object-cover rounded-lg" // Ensure the image covers the square
+                                fill
+                                quality={100}
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                priority
+                                className="object-cover rounded-lg" 
                             />
                         </div>
                     ))}
                 </div>
 
-                {/* "View All" Button */}
                 {room.images.length > 4 && (
                     <div className="p-2">
                         <button
@@ -132,7 +133,7 @@ const Room = ({ params }: { params: Promise<{ id: string }> }) => {
 
             {/* Image Modal */}
             {isModalOpen && (
-                <ImageModal images={images} onClose={() => setIsModalOpen(false)} />
+                <ImageModal images={room.images} onClose={() => setIsModalOpen(false)} />
             )}
         </div>
     );

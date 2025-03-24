@@ -39,7 +39,7 @@ const Register = () => {
             {/* Overlay for better readability */}
             <div className="absolute top-0 z-0 inset-0 bg-black/30 backdrop-blur-sm"></div>
 
-            <div className="relative w-full max-w-md bg-white/90 backdrop-blur-md rounded-lg shadow p-6">
+            <div className="relative w-full max-w-md bg-white/90 backdrop-blur-md rounded-lg shadow p-6 max-sm:m-2">
                 {/* Progress Bar */}
                 <div className="mb-6">
                     <div className="w-full bg-gray-200 rounded-full h-2">

@@ -13,7 +13,7 @@ const Login = () => {
         >
             <div className="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
 
-            <div className="relative backdrop-blur-md bg-white/20 dark:bg-gray-800/30 px-10 py-8 rounded-2xl shadow-2xl max-w-sm w-full">
+            <div className="relative backdrop-blur-md bg-white/20 dark:bg-gray-800/30 px-10 py-8 rounded-2xl shadow-2xl max-w-sm w-full max-sm:m-2">
                 {isForgotPassword ? (
                     <ResetPassword setIsForgotPassword={setIsForgotPassword} />
                 ) : (
