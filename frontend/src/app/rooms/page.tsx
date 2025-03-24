@@ -177,10 +177,8 @@ const Rooms = () => {
             {/* Room List */}
             <div className="p-4 min-h-screen bg-gray-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {filteredRooms.slice(0, visibleRooms).map((room) => (
-                    <Link
+                    <div
                         key={room._id}
-                        target="_blank" rel="noopener noreferrer"
-                        href={`/rooms/${room._id}`}
                         className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200 h-76 flex flex-col max-w-xs mx-auto">
                         {/* Carousel */}
                         <div className="flex-1 relative">
@@ -234,15 +232,18 @@ const Rooms = () => {
                         </div>
 
                         {/* Card Content */}
-                        <div className="p-4 flex flex-col gap-2">
+                        <Link
+                            target="_blank" rel="noopener noreferrer"
+                            href={`/rooms/${room._id}`}
+                            className="p-4 flex flex-col gap-2">
                             <h2 className="text-lg font-bold text-pink-500">{room.name}</h2>
                             <p className="text-sm text-gray-600 line-clamp-2">{room.description}</p>
                             <div className="flex justify-between items-center">
                                 <span className="text-sm font-bold text-yellow-600">${room.price_per_hour} /hour</span>
                                 <span className="text-sm text-gray-500">{room.capacity} Guests</span>
                             </div>
-                        </div>
-                    </Link>
+                        </Link>
+                    </div>
                 ))}
             </div>
 

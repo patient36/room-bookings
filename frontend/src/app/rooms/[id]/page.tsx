@@ -1,25 +1,33 @@
-"use client"; // Mark the component as a Client Component
+"use client";
 
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
+import ImageModal from '@/components/GalleryModel';
+import { images } from '../rooms';
 
 interface Room {
     _id: string;
     name: string;
     description: string;
+    area: string;
+    street: string;
+    location: string;
+    availability: string;
+    amenities: [string];
+    owner: string;
     price_per_hour: number;
     capacity: number;
     images: string[];
 }
 
 const Room = ({ params }: { params: Promise<{ id: string }> }) => {
-    // Unwrap the params object using React.use()
     const { id } = React.use(params);
 
     const [room, setRoom] = useState<Room | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-    // Fetch room data when the component mounts or the ID changes
     useEffect(() => {
         const fetchRoom = async () => {
             try {
@@ -28,7 +36,7 @@ const Room = ({ params }: { params: Promise<{ id: string }> }) => {
                     throw new Error('Failed to fetch room data');
                 }
                 const data = await response.json();
-                setRoom(data.room); // Assuming the room data is in `data.data`
+                setRoom(data.room);
             } catch (error) {
                 console.error('Error fetching room:', error);
                 setError('Failed to load room data');
@@ -55,18 +63,31 @@ const Room = ({ params }: { params: Promise<{ id: string }> }) => {
     return (
         <div className="min-h-screen bg-gray-100 py-8">
             <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-                {/* Room Images Gallery */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2">
-                    {room.images.map((image, index) => (
-                        <div key={index} className="relative aspect-w-1 aspect-h-1">
-                            <img
+                {/* Image Grid (2x2) */}
+                <div className="grid grid-cols-2 gap-2 p-2">
+                    {room.images.slice(0, 4).map((image, index) => (
+                        <div key={index} className="relative aspect-square">
+                            <Image
                                 src={image}
                                 alt={`Room ${room.name} image ${index + 1}`}
-                                className="w-full h-full object-cover rounded-lg"
+                                fill // Fill the container
+                                className="object-cover rounded-lg" // Ensure the image covers the square
                             />
                         </div>
                     ))}
                 </div>
+
+                {/* "View All" Button */}
+                {room.images.length > 4 && (
+                    <div className="p-2">
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="w-full bg-black bg-opacity-50 text-white py-2 px-4 rounded-lg hover:bg-opacity-75 transition-colors duration-200"
+                        >
+                            View All ({room.images.length} Photos)
+                        </button>
+                    </div>
+                )}
 
                 {/* Room Details Card */}
                 <div className="p-6">
@@ -108,6 +129,11 @@ const Room = ({ params }: { params: Promise<{ id: string }> }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Image Modal */}
+            {isModalOpen && (
+                <ImageModal images={images} onClose={() => setIsModalOpen(false)} />
+            )}
         </div>
     );
 };
