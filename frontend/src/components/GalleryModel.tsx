@@ -2,7 +2,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Carousel } from "react-responsive-carousel";
 import "react-responsive-carousel/lib/styles/carousel.min.css";
-import { FaChevronLeft, FaChevronRight, FaTimes, FaTh } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaTimes, FaTh, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
 interface ImageModalProps {
   images: string[];
@@ -189,7 +189,7 @@ const ImageModal: React.FC<ImageModalProps> = ({ images, onClose }) => {
                   className="object-cover rounded-lg"
                 />
                 <p className="absolute bottom-2 left-2 text-sm text-white bg-black bg-opacity-50 px-2 py-1 rounded">
-                  Image {index + 1}
+                  {index + 1}
                 </p>
               </div>
             ))}
@@ -202,21 +202,21 @@ const ImageModal: React.FC<ImageModalProps> = ({ images, onClose }) => {
               disabled={page === 1}
               className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
             >
-              Previous
+              <FaArrowLeft className="w-5 h-5" />
             </button>
             <button
               onClick={onClose}
-              className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              className="bg-red-600 text-white p-4 cursor-pointer rounded-full hover:bg-red-700 transition-colors duration-200"
               aria-label="Close modal"
             >
-              Close
+              <FaTimes className="w-5 h-5" />
             </button>
             <button
               onClick={handleNextPage}
               disabled={page * imagesPerPage >= images.length}
               className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50"
             >
-              Next
+              <FaArrowRight className="w-5 h-5" />
             </button>
           </div>
         </div>

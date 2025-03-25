@@ -24,7 +24,7 @@ const bookingSchema = new mongoose.Schema({
             validator: function (v) {
                 return v >= new Date()
             },
-            message:"checkIn can not be a past date"
+            message: "checkIn can not be a past date"
         }
     },
     checkOut: {
@@ -50,6 +50,10 @@ const bookingSchema = new mongoose.Schema({
         default: 0,
         min: [0, "Fees cannot be negative"],
     },
+    payment: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Payment"
+    }
 }, {
     timestamps: true
 })

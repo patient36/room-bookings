@@ -212,12 +212,12 @@ ownersRouter.delete('/room/:id', [protect, isOwner], async (req, res, next) => {
     }
 });
 
-//Payments for my rooms
-ownersRouter.get('/payments', [protect, isOwner], async (req, res, next) => {
+//Income from my rooms
+ownersRouter.get('/income', [protect, isOwner], async (req, res, next) => {
     try {
         const user = req.user;
-        const payments = await Payment.find({ receiver: user._id });
-        res.status(200).json({ payments });
+        const income = await Payment.find({ receiver: user._id });
+        res.status(200).json({ income });
     } catch (error) {
         next(error);
     }

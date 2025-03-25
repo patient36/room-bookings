@@ -313,4 +313,6 @@ adminRouter.put('/grant-owner', [protect, isAdmin], async (req, res, next) => {
     }
 })
 
+// pay room owners
+
 export default adminRouter

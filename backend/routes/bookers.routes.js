@@ -26,6 +26,7 @@ bookersRouter.post("/book-room", [protect, isActive, isAvailable, hasPaid], asyn
         // Create the new booking
         const booking = await Booking.create({ checkIn, checkOut, bookerId: user._id, roomId: room._id });
         booking.fees = room.price_per_hour * booking.duration;
+        booking.payment = req.payment._id;
         await booking.save();
 
         // Update room details
@@ -100,68 +101,6 @@ bookersRouter.post("/cancel-booking", [protect, isActive], async (req, res, next
     }
 });
 
-// edit booking
-bookersRouter.put('/edit-booking', [protect, isActive], async (req, res, next) => {
-    try {
-        const user = req.user;
-        const { roomId, bookingId, checkIn, checkOut } = req.body;
-
-        // Validate checkIn and checkOut
-        if (!checkIn || !checkOut) {
-            return res.status(400).json({ message: "checkIn and checkOut are required" });
-        }
-
-        // Check if room exists
-        const room = await Room.findOne({ _id: roomId }).populate("owner");
-        if (!room) {
-            return res.status(404).json({ message: "Room not found" });
-        }
-
-        // Check if booking exists and belongs to the user
-        const booking = await Booking.findOne({ _id: bookingId, bookerId: user._id, roomId });
-        if (!booking) {
-            return res.status(404).json({ message: "Booking not found" });
-        }
-
-        // Verify room availability
-        const bookings = await Booking.find({ roomId, status: { $in: ["active", "pending"] }, _id: { $ne: bookingId } });
-        const incomingUpdate = { checkIn: new Date(checkIn).toISOString(), checkOut: new Date(checkOut).toISOString() };
-        const result = processBooking(bookings, incomingUpdate);
-
-        if (result.roomAvailable) {
-            // Recalculate room's total hours
-            room.total_hours_booked -= booking.duration;
-            await room.save();
-
-            // Calculate the new duration and fees
-            const updatedCheckIn = new Date(incomingUpdate.checkIn);
-            const updatedCheckOut = new Date(incomingUpdate.checkOut);
-            const duration = Math.round(((updatedCheckOut - updatedCheckIn) / 3600000) * 1000) / 1000;
-
-            const updatedBooking = await Booking.findByIdAndUpdate(bookingId, { ...incomingUpdate, duration }, { new: true });
-
-            // Update room's total hours
-            room.total_hours_booked += updatedBooking.duration;
-            await room.save();
-
-            // Notify the user (booker)
-            const text = `Booking for room ${room.name} has been updated. New check-in: ${new Date(updatedBooking.checkIn).toISOString()} and new check-out: ${new Date(updatedBooking.checkOut).toISOString()}`;
-            const subject = "Booking Updated";
-            await notifyUser(user, text, subject);
-
-            // Notify the room owner
-            const ownerText = `Booking for your room ${room.name} has been updated. New check-in: ${new Date(updatedBooking.checkIn).toISOString()} and new check-out: ${new Date(updatedBooking.checkOut).toISOString()}`;
-            await notifyUser(room.owner, ownerText, subject);
-
-            return res.status(200).json({ message: "Booking updated successfully", booking: updatedBooking });
-        } else {
-            return res.status(409).json({ message: "Room unavailable", availableDates: result.availableDates });
-        }
-    } catch (error) {
-        next(error);
-    }
-});
-
 // my bookings
 bookersRouter.get('/my-bookings', [protect, isActive], async (req, res, next) => {
     try {
@@ -172,7 +111,7 @@ bookersRouter.get('/my-bookings', [protect, isActive], async (req, res, next) =>
 
         const [bookings, total] = await Promise.all([
             Booking.find({ bookerId: user._id })
-                .populate("roomId")
+                .populate("roomId payment")
                 .skip(skip)
                 .limit(limit),
             Booking.countDocuments({ bookerId: user._id })
@@ -282,7 +221,19 @@ bookersRouter.post('/available-rooms', async (req, res, next) => {
         }
         res.status(200).json({ availableRooms })
     } catch (error) {
-
+        next(error)
     }
 })
+
+// get my expenses
+ownersRouter.get('/expenses', [protect, isOwner], async (req, res, next) => {
+    try {
+        const user = req.user;
+        const expenses = await Payment.find({ payer: user._id });
+        res.status(200).json({ expenses });
+    } catch (error) {
+        next(error);
+    }
+});
+
 export default bookersRouter
