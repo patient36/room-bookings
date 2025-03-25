@@ -39,7 +39,7 @@ const Room = ({ params }: { params: Promise<{ id: string }> }) => {
     useEffect(() => {
         const fetchRoom = async () => {
             try {
-                const response = await fetch(`http://localhost:5000/api/booker/rooms/${id}`);
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API}/api/booker/rooms/${id}`);
                 if (!response.ok) throw new Error('Failed to fetch room data');
                 const data = await response.json();
                 setRoom(data.room);

@@ -4,6 +4,7 @@ import generateToken from '../utils/generateToken.js'
 import sendSMS from '../utils/sns.js'
 import sendEmail from '../utils/ses.js'
 import { sendOTP, verifyOTP } from '../utils/OTP.js'
+import protect from '../middlewares/protect.js'
 
 const authRouter = express.Router()
 
@@ -106,23 +107,17 @@ authRouter.post('/logout', async (req, res, next) => {
     res.status(200).json({ message: "Logged out successfully." });
 })
 
-authRouter.patch("/reset-password", async (req, res, next) => {
+authRouter.patch("/reset-password", protect, async (req, res, next) => {
     try {
-        const { email, oldPassword, newPassword, OTP } = req.body;
+        const { oldPassword, newPassword } = req.body;
 
         // Validate input
-        if (!email?.trim() || !oldPassword?.trim() || !newPassword?.trim() || !OTP?.trim()) {
-            return res.status(400).json({ message: "Email, old password, new password, and OTP are required." });
-        }
-
-        // Verify OTP
-        const isValid = await verifyOTP(email, OTP);
-        if (!isValid.success) {
-            return res.status(400).json({ message: "Invalid or expired OTP." });
+        if (!email?.trim() || !oldPassword?.trim() || !newPassword?.trim()) {
+            return res.status(400).json({ message: "Email, old password and new password are required." });
         }
 
         // Find the user
-        const user = await User.findOne({ email }).select("+password");
+        const user = await User.findOne({ email: req.user.email }).select("+password");
         if (!user) {
             return res.status(404).json({ message: "User not found." });
         }
@@ -148,6 +143,10 @@ authRouter.post('/send-otp', async (req, res, next) => {
         const { email } = req.body
         if (!email) {
             return res.status(400).json({ message: "Receiving email is required " })
+        }
+        const user = await User.findOne({ email })
+        if (!user) {
+            return res.status(404).json({ message: "User not found" })
         }
         const EmailOTP = await sendOTP(email)
         const subject = "LOYALTY HAVEN - Verification Code"

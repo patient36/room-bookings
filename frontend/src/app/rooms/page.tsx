@@ -50,7 +50,7 @@ const Rooms = () => {
                 limit: DEFAULT_PAGE_SIZE.toString(),
             });
 
-            const response = await fetch(`http://localhost:5000/api/booker/rooms/?${queryParams}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API}/api/booker/rooms/?${queryParams}`, {
                 cache: 'no-store',
             });
             const data = await response.json();

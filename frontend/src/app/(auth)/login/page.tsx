@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import ResetPassword from "@/components/ResetPassForm";
-import LoginForm from "@/components/LoginForm";
+import ResetPassword from "@/components/auth/ResetPassForm";
+import LoginForm from "@/components/auth/LoginForm";
 
 const Login = () => {
     const [isForgotPassword, setIsForgotPassword] = useState(false);

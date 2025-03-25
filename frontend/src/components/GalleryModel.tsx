@@ -188,9 +188,6 @@ const ImageModal: React.FC<ImageModalProps> = ({ images, onClose }) => {
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="object-cover rounded-lg"
                 />
-                <p className="absolute bottom-2 left-2 text-sm text-white bg-black bg-opacity-50 px-2 py-1 rounded">
-                  {index + 1}
-                </p>
               </div>
             ))}
           </div>

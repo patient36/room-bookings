@@ -1,8 +1,12 @@
 "use client";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 const Register = () => {
-    const [step, setStep] = useState(1); // Current step
+    const { setUser } = useAuth();
+    const router = useRouter();
+    const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
         username: "",
         email: "",
@@ -12,31 +16,117 @@ const Register = () => {
         password: "",
         confirmPassword: "",
     });
+    const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Handle input changes
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
         setFormData((prev) => ({ ...prev, [id]: value }));
     };
 
-    // Handle form submission
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (step === 3) {
-            // Final submission logic
-            console.log("Form Data:", formData);
-            alert("Registration successful!");
-        } else {
-            setStep((prev) => prev + 1); // Move to the next step
+    const validateCredentials = async () => {
+        if (!formData.email || !formData.phone) {
+            setError("Please provide both email and phone number");
+            return false;
+        }
+
+        setIsLoading(true);
+        setError("");
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API}/api/auth/validate-credentials`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache'
+                },
+                body: JSON.stringify({
+                    email: formData.email,
+                    phone: formData.phone
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(await response.text() || "Validation failed");
+            }
+
+            return true;
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Validation failed");
+            return false;
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    // Progress bar
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (step === 1) {
+            const isValid = await validateCredentials();
+            if (isValid) {
+                setStep(2);
+            }
+        }
+        else if (step === 2) {
+            if (!formData.emailOTP || !formData.phoneOTP) {
+                setError("Please enter both OTPs");
+                return;
+            }
+            setStep(3);
+        }
+        else if (step === 3) {
+            if (formData.password !== formData.confirmPassword) {
+                setError("Passwords do not match");
+                return;
+            }
+            if (formData.password.length < 6) {
+                setError("Password must be at least 6 characters");
+                return;
+            }
+
+            setIsLoading(true);
+            setError("");
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    body: JSON.stringify({
+                        name: formData.username,
+                        email: formData.email,
+                        phone: formData.phone,
+                        password: formData.password,
+                        EmailOTP: formData.emailOTP,
+                        PhoneOTP: formData.phoneOTP
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(await response.text() || "Registration failed");
+                }
+
+                // Auto login
+                const data = await response.json();
+                
+                // Update auth context with user data
+                setUser(data);
+
+                // Redirect to dashboard
+                router.push("/dashboard");
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Registration failed");
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
     const progress = (step / 3) * 100;
 
     return (
         <form onSubmit={handleSubmit} className="min-h-screen flex items-center justify-center bg-cover bg-center relative" style={{ backgroundImage: "url('/dest3.jpg')" }}>
-            {/* Overlay for better readability */}
             <div className="absolute top-0 z-0 inset-0 bg-black/30 backdrop-blur-sm"></div>
 
             <div className="relative w-full max-w-md bg-white/90 backdrop-blur-md rounded-lg shadow p-6 max-sm:m-2">
@@ -52,6 +142,12 @@ const Register = () => {
                         Step {step} of 3
                     </p>
                 </div>
+
+                {error && (
+                    <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+                        {error}
+                    </div>
+                )}
 
                 {/* Step 1: Collect username, email, and phone */}
                 {step === 1 && (
@@ -156,6 +252,7 @@ const Register = () => {
                                 onChange={handleChange}
                                 className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg block w-full p-2.5"
                                 required
+                                minLength={6}
                             />
                         </div>
                         <div>
@@ -182,6 +279,7 @@ const Register = () => {
                             type="button"
                             onClick={() => setStep((prev) => prev - 1)}
                             className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                            disabled={isLoading}
                         >
                             Previous
                         </button>
@@ -189,8 +287,19 @@ const Register = () => {
                     <button
                         type="submit"
                         className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                        disabled={isLoading}
                     >
-                        {step === 3 ? "Submit" : "Next"}
+                        {isLoading ? (
+                            <span className="flex items-center justify-center">
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                {step === 3 ? "Registering..." : "Processing..."}
+                            </span>
+                        ) : (
+                            step === 3 ? "Register" : "Next"
+                        )}
                     </button>
                 </div>
             </div>

@@ -226,7 +226,7 @@ bookersRouter.post('/available-rooms', async (req, res, next) => {
 })
 
 // get my expenses
-ownersRouter.get('/expenses', [protect, isOwner], async (req, res, next) => {
+bookersRouter.get('/expenses', [protect], async (req, res, next) => {
     try {
         const user = req.user;
         const expenses = await Payment.find({ payer: user._id });
