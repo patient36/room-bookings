@@ -6,6 +6,7 @@ import 'react-responsive-carousel/lib/styles/carousel.min.css';
 import Image from 'next/image';
 import { FaAngleLeft, FaAngleRight, FaFilter, FaTimes, FaUndo } from 'react-icons/fa';
 import Link from 'next/link';
+import { formatNumber } from '@/utils/formatNumbers';
 
 interface Room {
     _id: string;
@@ -43,7 +44,7 @@ const Rooms = () => {
             const queryParams = new URLSearchParams({
                 sort: 'capacity,price_per_hour',
                 minPrice: filters.minPrice?.toString() || '0',
-                maxPrice: filters.maxPrice?.toString() || '100',
+                maxPrice: filters.maxPrice?.toString() || `${10 ** 10}`,
                 minCapacity: filters.capacity?.toString() || '1',
                 page: page.toString(),
                 limit: DEFAULT_PAGE_SIZE.toString(),
@@ -217,7 +218,7 @@ const Rooms = () => {
                                     />
                                 )}
                             >
-                                {room.images.slice(0,6).map((image, index) => (
+                                {room.images.slice(0, 6).map((image, index) => (
                                     <div key={index} className="h-42">
                                         <Image
                                             height={400}
@@ -239,8 +240,8 @@ const Rooms = () => {
                             <h2 className="text-lg font-bold text-pink-500">{room.name}</h2>
                             <p className="text-sm text-gray-600 line-clamp-2">{room.description}</p>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm font-bold text-yellow-600">${room.price_per_hour} /hour</span>
-                                <span className="text-sm text-gray-500">{room.capacity} Guests</span>
+                                <span className="text-sm font-bold text-yellow-600">RWF {formatNumber(room.price_per_hour)} /hour</span>
+                                <span className="text-sm text-gray-500">{formatNumber(room.capacity)} Guests</span>
                             </div>
                         </Link>
                     </div>

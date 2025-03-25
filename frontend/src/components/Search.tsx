@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { rooms } from '@/app/rooms/rooms';
 
 const Search = () => {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<string[]>([]);
-
+    const rooms = [
+        { id: 1, name: 'Room 1' },
+        { id: 2, name: 'Room 2' },
+        { id: 3, name: 'Room 3' },
+    ]
     const handleSearch = (searchQuery: string) => {
         const filteredRooms = rooms.filter(room =>
             room.name.toLowerCase().includes(searchQuery.toLowerCase())
