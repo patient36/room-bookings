@@ -1,14 +1,14 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import AdminDashboard from "@/components/dashboard/AdminDashboard";
-import BookerDashboard from "@/components/dashboard/BookerDashboard";
-import OwnerDashboard from "@/components/dashboard/OwnerDashboard";
+import AdminView from "@/components/dashboard/AdminView";
+import OwnerView from "@/components/dashboard/OwnerView";
+import BookerView from "@/components/dashboard/BookerView";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
-const DashboardPage = () => {
+export default function DashboardPage() {
     const { user, isAuthenticated, isLoading } = useAuth();
     const router = useRouter();
 
@@ -16,26 +16,32 @@ const DashboardPage = () => {
         if (!isLoading && !isAuthenticated) {
             router.push("/login");
         }
-    }, [isLoading, isAuthenticated, router]);
+    }, [isAuthenticated, isLoading, router]);
 
     if (isLoading) {
-        return <LoadingSpinner />;
+        return <LoadingSpinner />
     }
 
     if (!isAuthenticated || !user) {
-        return <LoadingSpinner />;
+        return <LoadingSpinner />
     }
 
-    switch (user.accountType) {
+    switch (user?.accountType) {
         case "admin":
-            return <AdminDashboard user={user} />;
-        case "booker":
-            return <BookerDashboard user={user} />;
+            return <AdminView user={user} />;
         case "owner":
-            return <OwnerDashboard user={user} />;
+            return <OwnerView user={user} />;
+        case "booker":
+            return <BookerView user={user} />;
         default:
-            return null;
-    }
-};
+            return (
+                <div className="flex items-center justify-center min-h-screen bg-gray-100">
+                    <div className="p-6 bg-white text-red-700 rounded-lg shadow-lg text-center">
+                        <h2 className="text-2xl font-semibold mb-2">Unauthorized Access</h2>
+                        <p className="text-gray-600">Please create an account first. If you already have one, log in.</p>
+                    </div>
+                </div>
 
-export default DashboardPage;
+            );
+    }
+}
